@@ -1,0 +1,302 @@
+.container {
+  position: relative;
+  transition: all 0.3s ease;
+  transform-style: preserve-3d;
+}
+
+.shadow {
+  position: absolute;
+  top: 5%;
+  left: 5%;
+  width: 90%;
+  height: 90%;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: -1;
+  transition: box-shadow 0.3s ease;
+}
+
+.content {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  overflow: hidden;
+  z-index: 2;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Glass reflection with a subtle glare overlay */
+.reflection {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 20;
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.12) 0%, 
+    rgba(255, 255, 255, 0.03) 25%, 
+    rgba(255, 255, 255, 0) 50%, 
+    rgba(255, 255, 255, 0.02) 80%, 
+    rgba(255, 255, 255, 0.06) 100%
+  );
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.4);
+}
+
+/* =========================================
+   IPHONES
+========================================= */
+.iphoneFrame {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: var(--frame-padding, 12px);
+  border-radius: var(--frame-radius, 44px);
+  background: #000;
+  width: var(--frame-width, 320px);
+  height: calc(var(--frame-width, 320px) / var(--aspect-ratio, 0.461));
+  flex-shrink: 0;
+  cursor: pointer;
+  overflow: visible;
+  /* Multi-level box shadow to simulate real metallic thickness and bezel depth */
+  box-shadow: 
+    0 0 0 1px rgba(0, 0, 0, 0.85),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+    inset 0 0 8px rgba(0, 0, 0, 0.95);
+}
+
+/* Outer metal frame */
+.iphoneFrame::before {
+  content: '';
+  position: absolute;
+  top: -3.5px; left: -3.5px; right: -3.5px; bottom: -3.5px;
+  border-radius: calc(var(--frame-radius, 44px) + 3.5px);
+  background: var(--metallic-gradient);
+  z-index: -1;
+  pointer-events: none;
+  box-shadow: 
+    0 10px 30px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(0, 0, 0, 0.9),
+    inset 0 1px 1px rgba(255, 255, 255, 0.35),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Noise overlay separated to avoid subpixel aliasing/rainbow pixelation on high-DPI screens under 3D transforms */
+.iphoneFrame::after {
+  content: '';
+  position: absolute;
+  top: -3.5px; left: -3.5px; right: -3.5px; bottom: -3.5px;
+  border-radius: calc(var(--frame-radius, 44px) + 3.5px);
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  background-size: 80px 80px;
+  opacity: 0.025; /* Super subtle monochrome grain, prevents Moire patterns */
+  mix-blend-mode: overlay;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.iphoneNotch {
+  position: absolute;
+  top: var(--frame-padding, 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100px;
+  height: 25px;
+  background: black;
+  border-bottom-left-radius: 15px;
+  border-bottom-right-radius: 15px;
+  z-index: 10;
+}
+
+.dynamicIsland {
+  position: absolute;
+  top: calc(var(--frame-padding, 12px) + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: var(--di-width, 100px);
+  height: 24px;
+  background: black;
+  border-radius: 14px;
+  z-index: 10;
+  box-shadow: 
+    inset 0 0.5px 0.5px rgba(255,255,255,0.15),
+    0 1px 2px rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 9px;
+}
+
+/* Subtle camera lens inside Dynamic Island */
+.dynamicIsland::after {
+  content: '';
+  width: 5px;
+  height: 5px;
+  background: radial-gradient(circle, #0e1e38 0%, #000000 70%);
+  border-radius: 50%;
+  opacity: 0.8;
+  box-shadow: inset 0 0 1px rgba(255,255,255,0.3);
+}
+
+/* Hardware Buttons */
+.sideButton {
+  position: absolute;
+  background: var(--metallic-gradient);
+  border-radius: 2px;
+  box-shadow: 
+    0 1.5px 3px rgba(0, 0, 0, 0.4), 
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.25);
+  border: 0.5px solid rgba(0, 0, 0, 0.3);
+  z-index: -2;
+}
+
+.powerBtn {
+  right: -6.5px;
+  top: 25%;
+  width: 3.5px;
+  height: 60px;
+}
+
+.volUpBtn {
+  left: -6.5px;
+  top: 22%;
+  width: 3.5px;
+  height: 40px;
+}
+
+.volDownBtn {
+  left: -6.5px;
+  top: 30%;
+  width: 3.5px;
+  height: 40px;
+}
+
+.actionBtn {
+  left: -6.5px;
+  top: 15%;
+  width: 3.5px;
+  height: 25px;
+}
+
+.cameraControlBtn {
+  right: -6.5px;
+  bottom: 25%;
+  width: 3.5px;
+  height: 50px;
+  border-radius: 1px;
+}
+
+/* =========================================
+   BROWSER
+========================================= */
+.browserFrame {
+  position: relative;
+  background: var(--frame-base, #ffffff);
+  border-radius: var(--frame-radius, 12px);
+  width: var(--frame-width, 600px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.05);
+}
+
+.browserHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 16px;
+  background: var(--frame-highlight, #f1f5f9);
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+.browserDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.browserContent {
+  position: relative;
+  width: 100%;
+  flex: 1;
+  background: #fff;
+}
+
+/* =========================================
+   MACBOOK
+========================================= */
+.macbookFrame {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: var(--frame-width, 600px);
+}
+
+.macbookScreen {
+  background: #000;
+  border-radius: 16px 16px 0 0;
+  padding: 14px 14px 20px 14px;
+  width: 100%;
+  position: relative;
+  /* 1.5px realistic metallic outer chamfer edge */
+  box-shadow: 
+    0 0 0 1.5px var(--frame-highlight),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+    inset 0 0 5px rgba(0, 0, 0, 0.95);
+  aspect-ratio: 1.5;
+}
+
+.macbookCamera {
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 6px;
+  height: 6px;
+  background: radial-gradient(circle, #0e203f 0%, #000000 80%);
+  border-radius: 50%;
+  box-shadow: 0 0 1px rgba(255,255,255,0.4);
+}
+
+.macbookBase {
+  width: 114%;
+  height: 14px;
+  background: var(--metallic-gradient);
+  border-radius: 0 0 16px 16px;
+  position: relative;
+  box-shadow: 
+    0 10px 24px rgba(0,0,0,0.4), 
+    inset 0 1px 0 rgba(255,255,255,0.45);
+  border-top: 1px solid rgba(0,0,0,0.85);
+}
+
+.macbookBase::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  border-radius: inherit;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  background-size: 80px 80px;
+  opacity: 0.025;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+.macbookNotch {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100px;
+  height: 5px;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 0 0 6px 6px;
+  box-shadow: inset 0 1px 1px rgba(0,0,0,0.6);
+}

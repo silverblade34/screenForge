@@ -1,0 +1,47 @@
+:root {
+  --background: #09090b;
+  --foreground: #fafafa;
+  --card: #111117;
+  --card-foreground: #fafafa;
+  --border: #27272a;
+  --input: #27272a;
+  --primary: #818cf8;
+  --primary-foreground: #0a0a0f;
+  --secondary: #1c1c22;
+  --secondary-foreground: #fafafa;
+  --muted: #1c1c22;
+  --muted-foreground: #a1a1aa;
+  --accent: #1c1c22;
+  --accent-foreground: #fafafa;
+  --destructive: #f87171;
+  --ring: #818cf8;
+  --radius: 0.625rem;
+  --gradient-start: #6366f1;
+  --gradient-end: #8b5cf6;
+  --glow: rgba(129, 140, 248, 0.15);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
