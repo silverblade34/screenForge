@@ -4,6 +4,55 @@
   transform-style: preserve-3d;
 }
 
+/* ── Bloom wrapper — wraps the entire device for glow effect ─ */
+.bloomWrapper {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Radial glow behind the device */
+.ambientGlow {
+  position: absolute;
+  top: 15%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  height: 60%;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(ellipse, var(--device-glow-color, rgba(124,58,237,0.22)) 0%, transparent 70%);
+  filter: blur(20px);
+  animation: glowPulseDevice 3.5s ease-in-out infinite;
+}
+
+@keyframes glowPulseDevice {
+  0%, 100% { opacity: 0.7; transform: translateX(-50%) scale(1);   }
+  50%       { opacity: 1;   transform: translateX(-50%) scale(1.08); }
+}
+
+/* Ground reflection */
+.groundReflection {
+  width: 100%;
+  transform: scaleY(-1);
+  opacity: 0.12;
+  pointer-events: none;
+  flex-shrink: 0;
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, transparent 55%);
+  mask-image: linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, transparent 55%);
+  overflow: hidden;
+  max-height: 120px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Duplicate device clone inside reflection (set via JS clone-less approach) */
+.groundReflectionInner {
+  transform-origin: top center;
+}
+
 .shadow {
   position: absolute;
   top: 5%;
@@ -81,10 +130,33 @@
   z-index: -1;
   pointer-events: none;
   box-shadow: 
-    0 10px 30px rgba(0, 0, 0, 0.4),
+    0 20px 50px rgba(0, 0, 0, 0.6),
     0 0 0 1px rgba(0, 0, 0, 0.9),
     inset 0 1px 1px rgba(255, 255, 255, 0.35),
     inset 0 -1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Animated rim light — top-left corner glare */
+.iphoneFrame > .rimLight {
+  position: absolute;
+  top: -3.5px; left: -3.5px; right: -3.5px; bottom: -3.5px;
+  border-radius: calc(var(--frame-radius, 44px) + 3.5px);
+  pointer-events: none;
+  z-index: 0;
+  background: conic-gradient(
+    from 210deg,
+    rgba(255,255,255,0) 0deg,
+    rgba(255,255,255,0.18) 30deg,
+    rgba(255,255,255,0) 60deg,
+    rgba(255,255,255,0) 360deg
+  );
+  animation: rimRotate 8s linear infinite;
+  opacity: 0.8;
+}
+
+@keyframes rimRotate {
+  from { transform: rotate(0deg);   }
+  to   { transform: rotate(360deg); }
 }
 
 /* Noise overlay separated to avoid subpixel aliasing/rainbow pixelation on high-DPI screens under 3D transforms */
