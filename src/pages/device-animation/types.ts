@@ -66,6 +66,8 @@ export interface SceneScene {
   mode: SceneMode;
   /** Hotspots for flow mode */
   hotspots: FlowHotspot[];
+  /** Scene specific image */
+  image?: string | null;
 }
 
 export interface BackgroundOption {
@@ -126,7 +128,7 @@ const defScene = (
   camera: CameraState, color: string,
 ): SceneScene => ({
   id, name, duration, animation, easing, camera, color,
-  cameraSpeed: 1, scrollSpeed: 6, mode: 'animation', hotspots: [],
+  cameraSpeed: 1, scrollSpeed: 6, mode: 'animation', hotspots: [], image: null,
 });
 
 export const DEFAULT_SCENES: SceneScene[] = [

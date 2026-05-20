@@ -1302,7 +1302,7 @@
   overflow: hidden;
   position: relative;
   background-color: #000;
-  background-size: 100% auto;
+  background-size: cover;
   background-repeat: no-repeat;
   background-position: 50% 0%;
   animation: screenScrollBg var(--scroll-duration) linear forwards;

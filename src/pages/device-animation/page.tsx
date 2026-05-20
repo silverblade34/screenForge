@@ -14,9 +14,32 @@ import {
   DeviceModel, FrameColor,
   DEFAULT_SCENES, DEFAULT_LAYERS, DEFAULT_CAMERA, BACKGROUNDS,
 } from './types';
+
+// Custom hook for localStorage persistence
+function usePersistedState<T>(key: string, defaultValue: T): [T, React.Dispatch<React.SetStateAction<T>>] {
+  const [state, setState] = useState<T>(() => {
+    try {
+      const saved = localStorage.getItem(key);
+      return saved ? JSON.parse(saved) : defaultValue;
+    } catch (e) {
+      return defaultValue;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(key, JSON.stringify(state));
+    } catch (e) {
+      console.warn('Failed to save state to localStorage', e);
+    }
+  }, [key, state]);
+
+  return [state, setState];
+}
 import LeftSidebar from './LeftSidebar';
 import RightSidebar from './RightSidebar';
 import StudioTimeline from './StudioTimeline';
+import CanvasArea from './CanvasArea';
 import s from './page.module.css';
 
 /* ─── Animation variant builder ──────────────────────────────── */
@@ -159,19 +182,17 @@ export default function CinematicStudioPage() {
   }, []);
 
   // Scenes
-  const [scenes, setScenes] = useState<SceneScene[]>(DEFAULT_SCENES);
+  const [scenes, setScenes] = usePersistedState<SceneScene[]>('screenforge_anim_scenes', DEFAULT_SCENES);
 
   // Device
-  const [device, setDevice] = useState<DeviceModel>('iphone-16-pro');
-  const [frameColor, setFrameColor] = useState<FrameColor>('spaceBlack');
-  const [background, setBackground] = useState<BackgroundOption>(BACKGROUNDS[0]);
+  const [device, setDevice] = usePersistedState<DeviceModel>('screenforge_anim_device', 'iphone-16-pro');
+  const [frameColor, setFrameColor] = usePersistedState<FrameColor>('screenforge_anim_frameColor', 'spaceBlack');
+  const [background, setBackground] = usePersistedState<BackgroundOption>('screenforge_anim_background', BACKGROUNDS[0]);
 
   // Layers
-  const [layers, setLayers] = useState<Layer[]>(DEFAULT_LAYERS);
+  const [layers, setLayers] = usePersistedState<Layer[]>('screenforge_anim_layers', DEFAULT_LAYERS);
   const [activeLayer, setActiveLayer] = useState('device');
 
-  // Image upload
-  const [image, setImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Playback
@@ -252,7 +273,8 @@ export default function CinematicStudioPage() {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = ev => {
-      setImage(ev.target?.result as string);
+      const dataUrl = ev.target?.result as string;
+      setScenes(prev => prev.map(sc => sc.id === activeScene.id ? { ...sc, image: dataUrl } : sc));
       addToast('Screenshot loaded ✓', 'success');
     };
     reader.readAsDataURL(file);
@@ -263,7 +285,10 @@ export default function CinematicStudioPage() {
     const file = e.dataTransfer.files?.[0];
     if (file?.type.startsWith('image/')) {
       const reader = new FileReader();
-      reader.onload = ev => setImage(ev.target?.result as string);
+      reader.onload = ev => {
+        const dataUrl = ev.target?.result as string;
+        setScenes(prev => prev.map(sc => sc.id === activeScene.id ? { ...sc, image: dataUrl } : sc));
+      };
       reader.readAsDataURL(file);
     }
   };
@@ -325,21 +350,6 @@ export default function CinematicStudioPage() {
     }
   };
 
-  // Camera transform for virtual camera effect
-  const glowLayer = layers.find(l => l.id === 'glow');
-  const shadowLayer = layers.find(l => l.id === 'shadow');
-  const deviceLayer = layers.find(l => l.id === 'device');
-
-  const cameraTransform = `
-    scale(${camera.zoom})
-    translateX(${camera.panX}px)
-    translateY(${camera.panY}px)
-    rotateX(${camera.tiltX}deg)
-    rotateY(${camera.tiltY}deg)
-    rotateZ(${camera.rotation}deg)
-  `;
-
-  const animVariants = getVariants(activeScene.animation, activeScene.easing);
   const deviceScale = device === 'macbook-pro' ? 55 : device === 'browser' ? 58 : 65;
 
   return (
@@ -495,190 +505,27 @@ export default function CinematicStudioPage() {
           >
             <div className={s.canvasGrid} />
 
-            {/* Virtual Camera Stage */}
-            <div
-              className={s.cameraStage}
-              style={{
-                transform: cameraTransform,
-                filter: camera.blur > 0 ? `blur(${camera.blur}px)` : undefined,
-                // cameraSpeed multiplies the base 0.6s transition
-                transition: `transform ${(0.6 / (activeScene.cameraSpeed ?? 1)).toFixed(2)}s cubic-bezier(0.16,1,0.3,1), filter 0.6s ease`,
-              }}
-            >
-              {/* Glow Layer */}
-              {glowLayer?.visible && (
-                <div style={{
-                  position: 'absolute',
-                  inset: -60,
-                  borderRadius: '50%',
-                  background: 'radial-gradient(ellipse, rgba(168,85,247,0.18) 0%, transparent 70%)',
-                  pointerEvents: 'none',
-                  opacity: glowLayer.opacity / 100,
-                  animation: activeScene.animation === 'startup-launch' || activeScene.animation === 'floating'
-                    ? 'none' : undefined,
-                }} />
-              )}
-
-              {/* Shadow Layer */}
-              {shadowLayer?.visible && (
-                <div style={{
-                  position: 'absolute',
-                  bottom: -40,
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  width: '60%',
-                  height: 24,
-                  borderRadius: '50%',
-                  background: 'rgba(0,0,0,0.5)',
-                  filter: 'blur(16px)',
-                  opacity: shadowLayer.opacity / 100,
-                  pointerEvents: 'none',
-                }} />
-              )}
-
-              {/* Animated Device */}
-              <div className={s.sceneCanvas}>
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={`${animKey}-${activeSceneId}`}
-                    initial={animVariants.initial}
-                    animate={animVariants.animate}
-                    transition={animVariants.transition}
-                    style={{
-                      transformStyle: 'preserve-3d',
-                      opacity: deviceLayer?.visible ? deviceLayer.opacity / 100 : 0,
-                    }}
-                  >
-                    <input
-                      type="file"
-                      accept="image/*"
-                      ref={fileInputRef}
-                      onChange={handleFileChange}
-                      style={{ display: 'none' }}
-                    />
-                    <div
-                      onClick={handleDeviceScreenClick}
-                      style={{ cursor: activeScene.mode === 'flow' ? 'crosshair' : 'pointer', position: 'relative', width: '100%', height: '100%' }}
-                    >
-                      <DeviceFrame model={device} color={frameColor} scale={deviceScale}>
-                        {image ? (
-                          activeScene.mode === 'scroll' ? (
-                            <div 
-                              className={`${s.scrollContainer} ${isPlaying ? s.scrollRunning : ''}`} 
-                              style={{ 
-                                '--scroll-duration': `${activeScene.scrollSpeed || 6}s`,
-                                backgroundImage: `url(${image})`
-                              } as React.CSSProperties}
-                            />
-                          ) : (
-                            <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-                              <img src={image} alt="Mockup" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                              {activeScene.mode === 'flow' && (activeScene.hotspots || []).map((h, i) => (
-                                <div
-                                  key={h.id}
-                                  onClick={(e) => {
-                                    if (isPlaying && h.targetSceneId) {
-                                      e.stopPropagation();
-                                      handleSceneSeek(h.targetSceneId);
-                                    }
-                                  }}
-                                  style={{
-                                    position: 'absolute',
-                                    left: `${h.x}%`,
-                                    top: `${h.y}%`,
-                                    transform: 'translate(-50%, -50%)',
-                                    width: 44,
-                                    height: 44,
-                                    borderRadius: '50%',
-                                    background: isPlaying ? 'transparent' : 'rgba(168, 85, 247, 0.4)',
-                                    border: isPlaying ? 'none' : '2px dashed #a855f7',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    color: 'white',
-                                    fontSize: '0.6rem',
-                                    fontWeight: 'bold',
-                                    cursor: isPlaying && h.targetSceneId ? 'pointer' : 'crosshair',
-                                    zIndex: 10
-                                  }}
-                                >
-                                  {!isPlaying && (i + 1)}
-                                </div>
-                              ))}
-                            </div>
-                          )
-                        ) : (
-                          <div className={s.uploadPlaceholder} style={{ pointerEvents: 'none' }}>
-                            <div className={s.uploadIcon}>
-                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                                <rect x="3" y="3" width="18" height="18" rx="3" />
-                                <circle cx="8.5" cy="8.5" r="1.5" />
-                                <path d="M21 15l-5-5L5 21" />
-                              </svg>
-                              <span className={s.uploadIconPlus}>+</span>
-                            </div>
-                            <span className={s.uploadLabel}>
-                              {activeScene.mode === 'scroll'
-                                ? 'Drop a long screenshot'
-                                : 'Drop or click to upload'
-                              }
-                            </span>
-                            <span className={s.uploadSub}>PNG, JPG, WebP</span>
-                          </div>
-                        )}
-
-                        {/* Change Image Hover Overlay */}
-                        {image && activeScene.mode !== 'flow' && !isPlaying && (
-                          <div className={s.changeImageOverlay}>
-                            <div className={s.uploadIcon} style={{ background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)' }}>
-                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                                <rect x="3" y="3" width="18" height="18" rx="3" />
-                                <circle cx="8.5" cy="8.5" r="1.5" />
-                                <path d="M21 15l-5-5L5 21" />
-                              </svg>
-                              <span className={s.uploadIconPlus}>+</span>
-                            </div>
-                            <span style={{ fontSize: '0.65rem', fontWeight: 600, marginTop: 8, color: 'white' }}>Change Image</span>
-                          </div>
-                        )}
-                      </DeviceFrame>
-                    </div>
-                  </motion.div>
-                </AnimatePresence>
-              </div>
-            </div>
-
-            {/* Canvas Overlay */}
-            <div className={s.canvasOverlay}>
-              <button
-                className={`${s.canvasChip} ${s.playChip}`}
-                onClick={handlePlayPause}
-              >
-                {isPlaying ? (
-                  <><span>⏸</span> Pause</>
-                ) : (
-                  <><span>▶</span> Play All</>
-                )}
-              </button>
-              <div className={s.canvasChip}>
-                {activeScene.name} · {activeScene.animation.replace(/-/g, ' ')}
-              </div>
-            </div>
-
-            <div className={s.canvasOverlayRight}>
-              {isPlaying && (
-                <div className={s.canvasChip}>
-                  <div className={s.recordDot} />
-                  {currentTime.toFixed(1)}s
-                </div>
-              )}
-              <button
-                className={s.canvasChip}
-                onClick={addScene}
-              >
-                <Plus size={10} /> Scene
-              </button>
-            </div>
+            {/* Virtual Camera Stage & Overlays */}
+            <CanvasArea
+              activeScene={activeScene}
+              isPlaying={isPlaying}
+              currentTime={currentTime}
+              device={device}
+              frameColor={frameColor}
+              deviceScale={deviceScale}
+              background={background}
+              layers={layers}
+              camera={camera}
+              fileInputRef={fileInputRef}
+              handleFileChange={handleFileChange}
+              handleDrop={handleDrop}
+              handleDeviceScreenClick={handleDeviceScreenClick}
+              handleSceneSeek={handleSceneSeek}
+              handlePlayPause={handlePlayPause}
+              addScene={addScene}
+              getVariants={getVariants}
+              animKey={animKey}
+            />
           </div>
 
           {/* Timeline */}
