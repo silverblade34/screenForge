@@ -25,19 +25,19 @@ interface Props {
 
 const DEVICES: { value: DeviceModel; label: string }[] = [
   { value: 'iphone-16-pro', label: 'iPhone 16 Pro' },
-  { value: 'iphone-16',     label: 'iPhone 16' },
-  { value: 'macbook-pro',   label: 'MacBook Pro' },
-  { value: 'browser',       label: 'Browser' },
-  { value: 'none',          label: 'Frameless' },
+  { value: 'iphone-16', label: 'iPhone 16' },
+  { value: 'macbook-pro', label: 'MacBook Pro' },
+  { value: 'browser', label: 'Browser' },
+  { value: 'none', label: 'Frameless' },
 ];
 
 const CAMERA_PRESETS: { label: string; cam: Partial<CameraState> }[] = [
-  { label: 'Reset',         cam: { ...DEFAULT_CAMERA } },
-  { label: 'Zoom Top',      cam: { zoom: 1.4, panY: -80, tiltX: 8 } },
-  { label: 'Zoom Bottom',   cam: { zoom: 1.4, panY: 80, tiltX: -8 } },
-  { label: 'Wide',          cam: { zoom: 0.7, panX: 0, panY: 0 } },
-  { label: 'Side Left',     cam: { panX: -120, tiltY: 15 } },
-  { label: 'Side Right',    cam: { panX: 120, tiltY: -15 } },
+  { label: 'Reset', cam: { ...DEFAULT_CAMERA } },
+  { label: 'Zoom Top', cam: { zoom: 1.4, panY: -80, tiltX: 8 } },
+  { label: 'Zoom Bottom', cam: { zoom: 1.4, panY: 80, tiltX: -8 } },
+  { label: 'Wide', cam: { zoom: 0.7, panX: 0, panY: 0 } },
+  { label: 'Side Left', cam: { panX: -120, tiltY: 15 } },
+  { label: 'Side Right', cam: { panX: 120, tiltY: -15 } },
 ];
 
 function SectionHeader({ icon, label }: { icon: React.ReactNode; label: string }) {
@@ -137,13 +137,13 @@ export default function LeftSidebar({
       <div className={s.inspectorSection}>
         <SectionHeader icon={<Camera size={10} />} label="Camera" />
         <div className={s.sliderGroup}>
-          <SliderRow label="Zoom"     value={camera.zoom}     min={0.3} max={2.5} step={0.05} onChange={v => onCamera({ zoom: v })} />
-          <SliderRow label="Pan X"    value={camera.panX}     min={-300} max={300} onChange={v => onCamera({ panX: v })} unit="px" />
-          <SliderRow label="Pan Y"    value={camera.panY}     min={-300} max={300} onChange={v => onCamera({ panY: v })} unit="px" />
-          <SliderRow label="Tilt X"   value={camera.tiltX}    min={-30} max={30}   onChange={v => onCamera({ tiltX: v })} unit="°" />
-          <SliderRow label="Tilt Y"   value={camera.tiltY}    min={-30} max={30}   onChange={v => onCamera({ tiltY: v })} unit="°" />
-          <SliderRow label="Rotation" value={camera.rotation} min={-45} max={45}   onChange={v => onCamera({ rotation: v })} unit="°" />
-          <SliderRow label="Focus Blur" value={camera.blur}   min={0}   max={20}   onChange={v => onCamera({ blur: v })} unit="px" />
+          <SliderRow label="Zoom" value={camera.zoom} min={0.3} max={2.5} step={0.05} onChange={v => onCamera({ zoom: v })} />
+          <SliderRow label="Pan X" value={camera.panX} min={-300} max={300} onChange={v => onCamera({ panX: v })} unit="px" />
+          <SliderRow label="Pan Y" value={camera.panY} min={-300} max={300} onChange={v => onCamera({ panY: v })} unit="px" />
+          <SliderRow label="Tilt X" value={camera.tiltX} min={-30} max={30} onChange={v => onCamera({ tiltX: v })} unit="°" />
+          <SliderRow label="Tilt Y" value={camera.tiltY} min={-30} max={30} onChange={v => onCamera({ tiltY: v })} unit="°" />
+          <SliderRow label="Rotation" value={camera.rotation} min={-45} max={45} onChange={v => onCamera({ rotation: v })} unit="°" />
+          <SliderRow label="Focus Blur" value={camera.blur} min={0} max={20} onChange={v => onCamera({ blur: v })} unit="px" />
         </div>
         <div className={s.cameraGrid} style={{ marginTop: 10 }}>
           {CAMERA_PRESETS.map(p => (
@@ -162,9 +162,9 @@ export default function LeftSidebar({
       <div className={s.inspectorSection}>
         <SectionHeader icon={<Sun size={10} />} label="Lighting" />
         <div className={s.sliderGroup}>
-          <SliderRow label="Ambient"    value={80} min={0} max={100} onChange={() => {}} unit="%" />
-          <SliderRow label="Glow"       value={60} min={0} max={100} onChange={() => {}} unit="%" />
-          <SliderRow label="Rim Light"  value={40} min={0} max={100} onChange={() => {}} unit="%" />
+          <SliderRow label="Ambient" value={80} min={0} max={100} onChange={() => { }} unit="%" />
+          <SliderRow label="Glow" value={60} min={0} max={100} onChange={() => { }} unit="%" />
+          <SliderRow label="Rim Light" value={40} min={0} max={100} onChange={() => { }} unit="%" />
         </div>
       </div>
 

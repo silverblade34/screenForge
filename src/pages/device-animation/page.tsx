@@ -92,20 +92,6 @@ function getVariants(animation: AnimationPreset, easing: EasingType) {
         animate: { filter: 'blur(0px)', opacity: 1, scale: 1 },
         transition: { duration: 1.8, ease: [0.16, 1, 0.3, 1] as [number,number,number,number] } as Transition,
       };
-    case 'bounce':
-      return {
-        initial: { y: -180, opacity: 0 },
-        animate: { y: 0, opacity: 1 },
-        transition: { type: 'spring', stiffness: 220, damping: 12 } as Transition,
-      };
-    case 'scroll-reveal':
-      // The actual scroll motion is handled by CSS animation on the img,
-      // so the entry motion is just a subtle fade-in
-      return {
-        initial: { opacity: 0, scale: 0.97 },
-        animate: { opacity: 1, scale: 1 },
-        transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] } as Transition,
-      };
     default:
       return { initial: {}, animate: {}, transition: {} };
   }
@@ -298,7 +284,9 @@ export default function CinematicStudioPage() {
       camera: { ...DEFAULT_CAMERA },
       color: colors[scenes.length % colors.length],
       cameraSpeed: 1,
-      scrollOffset: 0,
+      scrollSpeed: 6,
+      mode: 'animation',
+      hotspots: [],
     };
     // Seek to the new scene's start so activeSceneId derives correctly
     const newOffset = scenes.reduce((s, sc) => s + sc.duration, 0);
@@ -315,6 +303,26 @@ export default function CinematicStudioPage() {
 
   const handleLayerToggle = (id: string) => {
     setLayers(prev => prev.map(l => l.id === id ? { ...l, visible: !l.visible } : l));
+  };
+
+  const handleDeviceScreenClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (activeScene.mode === 'flow') {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width) * 100;
+      const y = ((e.clientY - rect.top) / rect.height) * 100;
+      
+      const newHotspot = {
+        id: `h${Date.now()}`,
+        x, y,
+        label: `Link`,
+        targetSceneId: ''
+      };
+      updateScene(activeSceneId, { 
+        hotspots: [...(activeScene.hotspots || []), newHotspot] 
+      });
+    } else {
+      fileInputRef.current?.click();
+    }
   };
 
   // Camera transform for virtual camera effect
@@ -549,39 +557,58 @@ export default function CinematicStudioPage() {
                       style={{ display: 'none' }}
                     />
                     <div
-                      onClick={() => fileInputRef.current?.click()}
-                      style={{ cursor: 'pointer' }}
+                      onClick={handleDeviceScreenClick}
+                      style={{ cursor: activeScene.mode === 'flow' ? 'crosshair' : 'pointer', position: 'relative', width: '100%', height: '100%' }}
                     >
                       <DeviceFrame model={device} color={frameColor} scale={deviceScale}>
                         {image ? (
-                          activeScene.animation === 'scroll-reveal' ? (
-                            // Long-screenshot: show image taller than screen and animate scroll
-                            <div style={{
-                              width: '100%',
-                              height: '100%',
-                              overflow: 'hidden',
-                              position: 'relative',
-                            }}>
-                              <div
-                                style={{
-                                  width: '100%',
-                                  // image is 3× the frame height to allow scrolling
-                                  height: '300%',
-                                  animation: `screenScroll ${activeScene.duration}s linear infinite alternate`,
-                                }}
-                              >
-                                <img
-                                  src={image}
-                                  alt="Long screenshot"
-                                  style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top', display: 'block' }}
-                                />
-                              </div>
-                            </div>
+                          activeScene.mode === 'scroll' ? (
+                            <div 
+                              className={`${s.scrollContainer} ${isPlaying ? s.scrollRunning : ''}`} 
+                              style={{ 
+                                '--scroll-duration': `${activeScene.scrollSpeed || 6}s`,
+                                backgroundImage: `url(${image})`
+                              } as React.CSSProperties}
+                            />
                           ) : (
-                            <img src={image} alt="Mockup" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                            <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+                              <img src={image} alt="Mockup" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                              {activeScene.mode === 'flow' && (activeScene.hotspots || []).map((h, i) => (
+                                <div
+                                  key={h.id}
+                                  onClick={(e) => {
+                                    if (isPlaying && h.targetSceneId) {
+                                      e.stopPropagation();
+                                      handleSceneSeek(h.targetSceneId);
+                                    }
+                                  }}
+                                  style={{
+                                    position: 'absolute',
+                                    left: `${h.x}%`,
+                                    top: `${h.y}%`,
+                                    transform: 'translate(-50%, -50%)',
+                                    width: 44,
+                                    height: 44,
+                                    borderRadius: '50%',
+                                    background: isPlaying ? 'transparent' : 'rgba(168, 85, 247, 0.4)',
+                                    border: isPlaying ? 'none' : '2px dashed #a855f7',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: 'white',
+                                    fontSize: '0.6rem',
+                                    fontWeight: 'bold',
+                                    cursor: isPlaying && h.targetSceneId ? 'pointer' : 'crosshair',
+                                    zIndex: 10
+                                  }}
+                                >
+                                  {!isPlaying && (i + 1)}
+                                </div>
+                              ))}
+                            </div>
                           )
                         ) : (
-                          <div className={s.uploadPlaceholder}>
+                          <div className={s.uploadPlaceholder} style={{ pointerEvents: 'none' }}>
                             <div className={s.uploadIcon}>
                               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                                 <rect x="3" y="3" width="18" height="18" rx="3" />
@@ -591,12 +618,27 @@ export default function CinematicStudioPage() {
                               <span className={s.uploadIconPlus}>+</span>
                             </div>
                             <span className={s.uploadLabel}>
-                              {activeScene.animation === 'scroll-reveal'
+                              {activeScene.mode === 'scroll'
                                 ? 'Drop a long screenshot'
                                 : 'Drop or click to upload'
                               }
                             </span>
                             <span className={s.uploadSub}>PNG, JPG, WebP</span>
+                          </div>
+                        )}
+
+                        {/* Change Image Hover Overlay */}
+                        {image && activeScene.mode !== 'flow' && !isPlaying && (
+                          <div className={s.changeImageOverlay}>
+                            <div className={s.uploadIcon} style={{ background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)' }}>
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                                <rect x="3" y="3" width="18" height="18" rx="3" />
+                                <circle cx="8.5" cy="8.5" r="1.5" />
+                                <path d="M21 15l-5-5L5 21" />
+                              </svg>
+                              <span className={s.uploadIconPlus}>+</span>
+                            </div>
+                            <span style={{ fontSize: '0.65rem', fontWeight: 600, marginTop: 8, color: 'white' }}>Change Image</span>
                           </div>
                         )}
                       </DeviceFrame>
@@ -667,10 +709,21 @@ export default function CinematicStudioPage() {
         <div className={s.rightSidebar}>
           <RightSidebar
             scene={activeScene}
+            scenes={scenes}
+            onModeChange={m => updateScene(activeSceneId, { mode: m })}
             onAnimationChange={a => { updateScene(activeSceneId, { animation: a }); setAnimKey(k => k + 1); }}
             onEasingChange={e => updateScene(activeSceneId, { easing: e })}
             onDurationChange={d => updateScene(activeSceneId, { duration: d })}
             onCameraSpeedChange={sp => updateScene(activeSceneId, { cameraSpeed: sp })}
+            onScrollSpeedChange={sp => updateScene(activeSceneId, { scrollSpeed: sp })}
+            onHotspotUpdate={(id, targetId) => {
+              const hs = activeScene.hotspots.map(h => h.id === id ? { ...h, targetSceneId: targetId } : h);
+              updateScene(activeSceneId, { hotspots: hs });
+            }}
+            onHotspotDelete={id => {
+              const hs = activeScene.hotspots.filter(h => h.id !== id);
+              updateScene(activeSceneId, { hotspots: hs });
+            }}
           />
         </div>
       </div>
