@@ -1,7 +1,7 @@
 'use client';
 
 import {
-  useState, useRef, useCallback, useEffect, useMouseEvent,
+  useState, useRef, useCallback,
   type CSSProperties, type DragEvent, type ChangeEvent,
 } from 'react';
 import { ToolLayout, SplitPanel } from '@/components/ui/ToolLayout';
@@ -214,6 +214,10 @@ export default function MockupStudioPage() {
   const [tiltY,  setTiltY]  = useState(0);
   const [shadow, setShadow] = useState(40);
 
+  /* Camera UI */
+  const [cameraTab,  setCameraTab]  = useState<'zoom' | 'tilt'>('zoom');
+  const [precision,  setPrecision]  = useState(false);
+
   /* Background */
   const [bg, setBg] = useState<BgOption>(DEFAULT_BG);
 
@@ -307,14 +311,32 @@ export default function MockupStudioPage() {
   };
 
   /* ── Device transform ── */
-  // posX/posY are % of canvas; we compute px in the transform
-  // zoom controls scale of the DeviceFrame
+  // The wrapper sits at canvas center (top:50% left:50%), width/height auto.
+  // translate(-50%,-50%) centers on the device's own bounding box.
+  // posX/posY (-45..+45) map to ±30% of the canvas via a CSS var we inject.
+  const canvasW = canvasBgRef.current?.offsetWidth  ?? 800;
+  const canvasH = canvasBgRef.current?.offsetHeight ?? 450;
+  const pxX = (posX / 100) * canvasW;
+  const pxY = (posY / 100) * canvasH;
+
   const deviceStyle: CSSProperties = {
     position: 'absolute',
     top: '50%',
     left: '50%',
-    transform: `translate(calc(-50% + ${posX}%), calc(-50% + ${posY}%))`,
+    width: 'auto',
+    height: 'auto',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transformOrigin: 'center center',
+    transform: [
+      `translate(calc(-50% + ${pxX}px), calc(-50% + ${pxY}px))`,
+      `scale(${zoom / 100})`,
+      `rotateX(${tiltX}deg)`,
+      `rotateY(${tiltY}deg)`,
+    ].join(' '),
     transition: 'transform 0.38s cubic-bezier(0.4,0,0.2,1)',
+    transformStyle: 'preserve-3d',
   };
 
   /* ═══════════════════════════════════════
@@ -360,74 +382,126 @@ export default function MockupStudioPage() {
         </div>
       </div>
 
-      {/* Camera Controls — zoom + position */}
+      {/* Camera Controls — shots.so style */}
       <div className={s.section}>
-        <div className={s.sectionLabel}>
-          <span className={s.sectionLabelDot}/>
-          Camera
+
+        {/* Tab header */}
+        <div className={s.shotsCamHeader}>
+          <div className={s.shotsCamTabs}>
+            <button
+              className={`${s.shotsCamTab} ${cameraTab === 'zoom' ? s.shotsCamTabActive : ''}`}
+              onClick={() => setCameraTab('zoom')}
+            >Zoom</button>
+            <button
+              className={`${s.shotsCamTab} ${cameraTab === 'tilt' ? s.shotsCamTabActive : ''}`}
+              onClick={() => setCameraTab('tilt')}
+            >Tilt</button>
+          </div>
+          <button
+            className={`${s.precisionBtn} ${precision ? s.precisionBtnActive : ''}`}
+            onClick={() => setPrecision(v => !v)}
+            title="Precision mode: narrows slider range for fine control"
+          >
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"
+              style={{ width: 9, height: 9 }}>
+              <circle cx="8" cy="8" r="5.5"/>
+              <line x1="8" y1="1" x2="8" y2="4"/>
+              <line x1="8" y1="12" x2="8" y2="15"/>
+              <line x1="1" y1="8" x2="4" y2="8"/>
+              <line x1="12" y1="8" x2="15" y2="8"/>
+            </svg>
+            Precision
+          </button>
         </div>
-        <div className={s.cameraControls}>
-          {/* Zoom */}
-          <div className={s.cameraRow}>
-            <div className={s.sliderMeta}>
-              <span className={s.sliderName}>Zoom</span>
-              <span className={s.sliderVal}>{zoom}%</span>
+
+        {/* ── ZOOM TAB ── */}
+        {cameraTab === 'zoom' && (
+          <div className={s.shotsZoomContent}>
+
+            {/* Big zoom number */}
+            <div className={s.zoomBigDisplay}>
+              <span className={s.zoomBigNum}>{zoom}</span>
+              <span className={s.zoomBigUnit}>%</span>
             </div>
-            <input type="range" className={s.slider}
-              min={30} max={130} value={zoom}
-              onChange={e => { setZoom(+e.target.value); setActivePreset(null); }}/>
-          </div>
-          {/* Position X */}
-          <div className={s.cameraRow}>
-            <div className={s.sliderMeta}>
-              <span className={s.sliderName}>Position X</span>
-              <span className={s.sliderVal}>{posX > 0 ? '+' : ''}{posX}</span>
+
+            {/* Zoom slider */}
+            <input
+              type="range"
+              className={s.zoomBigSlider}
+              min={precision ? Math.max(30, zoom - 12) : 30}
+              max={precision ? Math.min(130, zoom + 12) : 130}
+              step={precision ? 0.5 : 1}
+              value={zoom}
+              onChange={e => { setZoom(+e.target.value); setActivePreset(null); }}
+            />
+
+            {/* Quick zoom chips */}
+            <div className={s.zoomChips}>
+              {[40, 60, 75, 90, 110].map(z => (
+                <button
+                  key={z}
+                  className={`${s.zoomChip} ${zoom === z ? s.zoomChipActive : ''}`}
+                  onClick={() => { setZoom(z); setActivePreset(null); }}
+                >{z}%</button>
+              ))}
             </div>
-            <input type="range" className={s.slider}
-              min={-45} max={45} value={posX}
-              onChange={e => { setPosX(+e.target.value); setActivePreset(null); }}/>
-          </div>
-          {/* Position Y */}
-          <div className={s.cameraRow}>
-            <div className={s.sliderMeta}>
-              <span className={s.sliderName}>Position Y</span>
-              <span className={s.sliderVal}>{posY > 0 ? '+' : ''}{posY}</span>
+
+            {/* Position X / Y side by side */}
+            <div className={s.posGrid}>
+              <div className={s.posItem}>
+                <div className={s.posItemHeader}>
+                  <span className={s.posItemLabel}>X</span>
+                  <span className={s.posItemVal}>{posX > 0 ? '+' : ''}{posX}</span>
+                </div>
+                <input type="range" className={s.slider}
+                  min={-45} max={45} value={posX}
+                  onChange={e => { setPosX(+e.target.value); setActivePreset(null); }}/>
+              </div>
+              <div className={s.posItem}>
+                <div className={s.posItemHeader}>
+                  <span className={s.posItemLabel}>Y</span>
+                  <span className={s.posItemVal}>{posY > 0 ? '+' : ''}{posY}</span>
+                </div>
+                <input type="range" className={s.slider}
+                  min={-45} max={45} value={posY}
+                  onChange={e => { setPosY(+e.target.value); setActivePreset(null); }}/>
+              </div>
             </div>
-            <input type="range" className={s.slider}
-              min={-45} max={45} value={posY}
-              onChange={e => { setPosY(+e.target.value); setActivePreset(null); }}/>
           </div>
-          {/* Tilt X */}
-          <div className={s.cameraRow}>
-            <div className={s.sliderMeta}>
-              <span className={s.sliderName}>Tilt X</span>
-              <span className={s.sliderVal}>{tiltX}°</span>
+        )}
+
+        {/* ── TILT TAB ── */}
+        {cameraTab === 'tilt' && (
+          <div className={s.shotsTiltContent}>
+            <div className={s.cameraRow}>
+              <div className={s.sliderMeta}>
+                <span className={s.sliderName}>Tilt X</span>
+                <span className={s.sliderVal}>{tiltX}°</span>
+              </div>
+              <input type="range" className={s.slider}
+                min={-15} max={15} value={tiltX}
+                onChange={e => { setTiltX(+e.target.value); setActivePreset(null); }}/>
             </div>
-            <input type="range" className={s.slider}
-              min={-15} max={15} value={tiltX}
-              onChange={e => { setTiltX(+e.target.value); setActivePreset(null); }}/>
-          </div>
-          {/* Tilt Y */}
-          <div className={s.cameraRow}>
-            <div className={s.sliderMeta}>
-              <span className={s.sliderName}>Tilt Y</span>
-              <span className={s.sliderVal}>{tiltY}°</span>
+            <div className={s.cameraRow}>
+              <div className={s.sliderMeta}>
+                <span className={s.sliderName}>Tilt Y</span>
+                <span className={s.sliderVal}>{tiltY}°</span>
+              </div>
+              <input type="range" className={s.slider}
+                min={-15} max={15} value={tiltY}
+                onChange={e => { setTiltY(+e.target.value); setActivePreset(null); }}/>
             </div>
-            <input type="range" className={s.slider}
-              min={-15} max={15} value={tiltY}
-              onChange={e => { setTiltY(+e.target.value); setActivePreset(null); }}/>
-          </div>
-          {/* Shadow */}
-          <div className={s.cameraRow}>
-            <div className={s.sliderMeta}>
-              <span className={s.sliderName}>Shadow</span>
-              <span className={s.sliderVal}>{shadow}</span>
+            <div className={s.cameraRow}>
+              <div className={s.sliderMeta}>
+                <span className={s.sliderName}>Shadow</span>
+                <span className={s.sliderVal}>{shadow}</span>
+              </div>
+              <input type="range" className={s.slider}
+                min={0} max={100} value={shadow}
+                onChange={e => { setShadow(+e.target.value); setActivePreset(null); }}/>
             </div>
-            <input type="range" className={s.slider}
-              min={0} max={100} value={shadow}
-              onChange={e => { setShadow(+e.target.value); setActivePreset(null); }}/>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Device */}
@@ -572,9 +646,11 @@ export default function MockupStudioPage() {
   const frameProps = {
     model: device,
     color: frameColor,
-    scale: zoom,
-    rotateX: tiltX,
-    rotateY: tiltY,
+    // scale/rotateX/rotateY are applied on deviceWrapper instead
+    // so html2canvas captures the correct DOM layout
+    scale: 100,
+    rotateX: 0,
+    rotateY: 0,
     shadow,
   };
 
@@ -598,7 +674,7 @@ export default function MockupStudioPage() {
   const dualDevice = (
     <div ref={deviceRef}
       style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      {/* Device 1 */}
+      {/* Device 1 — slightly smaller, positioned left */}
       <div
         style={{
           zIndex: dualLayout === 'side' ? 1 : 2,
@@ -613,11 +689,11 @@ export default function MockupStudioPage() {
         onDragOver={handleDragOver}
         onDrop={e => handleDrop(e, 1)}
       >
-        <DeviceFrame {...frameProps} scale={zoom * 0.82}>
+        <DeviceFrame {...frameProps} scale={82}>
           {image ? <img src={image} alt="" className={s.uploadedImage}/> : <UploadPlaceholder/>}
         </DeviceFrame>
       </div>
-      {/* Device 2 */}
+      {/* Device 2 — slightly smaller, positioned right */}
       <div
         style={{
           zIndex: dualLayout === 'side' ? 2 : 1,
@@ -632,7 +708,7 @@ export default function MockupStudioPage() {
         onDragOver={handleDragOver}
         onDrop={e => handleDrop(e, 2)}
       >
-        <DeviceFrame {...frameProps} scale={zoom * 0.82}>
+        <DeviceFrame {...frameProps} scale={82}>
           {image2 ? <img src={image2} alt="" className={s.uploadedImage}/> : <UploadPlaceholder/>}
         </DeviceFrame>
       </div>

@@ -599,17 +599,8 @@
 
 /* Override any rotation/animation that DeviceFrame might inject */
 .deviceWrapper {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  /* transition for smooth zoom/pan */
-  transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
-  /* Kill any pseudo-element animations from DeviceFrame children */
+  /* Positioning is fully controlled by inline deviceStyle in page.tsx */
+  /* Only define non-conflicting defaults here */
 }
 
 /* Nuclear option: kill all rotating backgrounds inside the canvas */
@@ -664,4 +655,206 @@
 @keyframes fadeSlideIn {
   from { opacity: 0; transform: translateY(-5px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ═══════════════════════════════════════════════
+   SHOTS.SO STYLE CAMERA CONTROLS
+   ═══════════════════════════════════════════════ */
+
+/* Tab header row */
+.shotsCamHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+/* Tab pill group */
+.shotsCamTabs {
+  display: flex;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.shotsCamTab {
+  padding: 5px 16px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: #52525b;
+  font-size: 0.65rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s cubic-bezier(0.4,0,0.2,1);
+}
+.shotsCamTab:hover { color: #a1a1aa; }
+.shotsCamTabActive {
+  background: rgba(168,85,247,0.18);
+  color: #d8b4fe;
+  box-shadow: 0 0 10px rgba(168,85,247,0.1);
+}
+
+/* Precision button */
+.precisionBtn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 9px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.06);
+  background: transparent;
+  color: #3f3f46;
+  font-size: 0.6rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.precisionBtn:hover { color: #71717a; border-color: rgba(255,255,255,0.1); }
+.precisionBtnActive {
+  background: rgba(168,85,247,0.12);
+  border-color: rgba(168,85,247,0.3);
+  color: #c084fc;
+}
+
+/* ── Zoom tab content ── */
+.shotsZoomContent {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Large zoom number */
+.zoomBigDisplay {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  justify-content: center;
+  padding: 6px 0 2px;
+}
+.zoomBigNum {
+  font-size: 2.6rem;
+  font-weight: 800;
+  color: #e4e4e7;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-family: 'DM Mono', ui-monospace, monospace;
+}
+.zoomBigUnit {
+  font-size: 0.85rem;
+  color: #52525b;
+  font-weight: 600;
+  padding-bottom: 4px;
+}
+
+/* Big zoom slider — more prominent than regular sliders */
+.zoomBigSlider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 99px;
+  background: linear-gradient(
+    to right,
+    rgba(168,85,247,0.6) 0%,
+    rgba(168,85,247,0.6) var(--pct, 40%),
+    rgba(255,255,255,0.08) var(--pct, 40%),
+    rgba(255,255,255,0.08) 100%
+  );
+  outline: none;
+  cursor: pointer;
+}
+.zoomBigSlider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #c084fc, #7c3aed);
+  border: 3px solid #0c0c0c;
+  box-shadow: 0 0 12px rgba(168,85,247,0.7), 0 2px 6px rgba(0,0,0,0.5);
+  cursor: grab;
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+.zoomBigSlider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 18px rgba(168,85,247,0.9), 0 2px 8px rgba(0,0,0,0.6);
+}
+.zoomBigSlider::-webkit-slider-thumb:active { cursor: grabbing; transform: scale(1.1); }
+.zoomBigSlider::-moz-range-thumb {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: #a855f7;
+  border: 3px solid #0c0c0c;
+  cursor: grab;
+}
+
+/* Zoom quick-access chips */
+.zoomChips {
+  display: flex;
+  gap: 4px;
+  justify-content: space-between;
+}
+.zoomChip {
+  flex: 1;
+  padding: 5px 2px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.02);
+  color: #52525b;
+  font-size: 0.58rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.14s cubic-bezier(0.4,0,0.2,1);
+  text-align: center;
+}
+.zoomChip:hover {
+  color: #a1a1aa;
+  background: rgba(255,255,255,0.05);
+  border-color: rgba(255,255,255,0.1);
+}
+.zoomChipActive {
+  background: rgba(168,85,247,0.16);
+  border-color: rgba(168,85,247,0.35);
+  color: #d8b4fe;
+  box-shadow: 0 0 8px rgba(168,85,247,0.12);
+}
+
+/* Position X/Y grid */
+.posGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.posItem {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.posItemHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.posItemLabel {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: #52525b;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.posItemVal {
+  font-size: 0.58rem;
+  color: #3f3f46;
+  font-variant-numeric: tabular-nums;
+  font-family: 'DM Mono', monospace;
+}
+
+/* ── Tilt tab content ── */
+.shotsTiltContent {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }

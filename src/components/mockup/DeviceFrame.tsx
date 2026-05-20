@@ -190,7 +190,7 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
   className = '',
   style = {},
   glow = true,
-  reflection = true,
+  reflection = false,
 }) => {
   const c = frameColors[color] || frameColors.spaceBlack;
 
@@ -208,11 +208,12 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
       className={`${s.bloomWrapper} ${className}`}
       style={containerStyle}
     >
-      {/* Ambient glow behind device */}
+      {/* Ambient glow behind device — hidden during PNG export */}
       {glow && (
         <div
           className={s.ambientGlow}
           aria-hidden="true"
+          data-export-hide="true"
           style={{ '--device-glow-color': c.glowColor } as React.CSSProperties}
         />
       )}

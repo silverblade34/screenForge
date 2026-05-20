@@ -29,7 +29,8 @@ export async function exportElementToPNG(
 ) {
   const html2canvas = (await import('html2canvas')).default;
 
-  // Hide ground-reflection elements so they don't appear in the export
+  // Temporarily hide decorative-only elements (reflections, glows)
+  // that html2canvas renders incorrectly (ignores mask-image, etc.)
   const hidden = Array.from(
     element.querySelectorAll<HTMLElement>('[data-export-hide="true"]'),
   );
@@ -37,19 +38,24 @@ export async function exportElementToPNG(
 
   let canvas: HTMLCanvasElement;
   try {
+    // Get the element's position relative to the page to capture only this element
+    const rect = element.getBoundingClientRect();
     canvas = await html2canvas(element, {
       scale,
       useCORS: true,
       allowTaint: true,
       backgroundColor: null,
-      // Ensure the captured area matches the element's bounding box exactly
-      width: element.offsetWidth,
-      height: element.offsetHeight,
-      windowWidth: element.offsetWidth,
-      windowHeight: element.offsetHeight,
+      logging: false,
+      // Correct for any page scroll so the capture aligns with the element
+      scrollX: -window.scrollX,
+      scrollY: -window.scrollY,
+      // Clip to the element's visible area only
+      x: rect.left + window.scrollX,
+      y: rect.top  + window.scrollY,
+      width:  rect.width,
+      height: rect.height,
     });
   } finally {
-    // Always restore visibility even if capture throws
     hidden.forEach(el => { el.style.visibility = ''; });
   }
 
