@@ -1,13 +1,12 @@
 /* ═══════════════════════════════════════════════
-   MOCKUP STUDIO — Cinematic Design System
-   Visual parity with Cinematic Motion Studio
+   MOCKUP STUDIO — v3
+   Fixed canvas · Shots.so-inspired zoom control
    ═══════════════════════════════════════════════ */
 
-/* ── Layout Shell ── */
+/* ─── Inspector Shell ─── */
 .controlsContainer {
   display: flex;
   flex-direction: column;
-  gap: 0;
   height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
@@ -21,311 +20,224 @@
   border-radius: 99px;
 }
 
-/* ── Inspector Sections ── */
+/* ─── Section ─── */
 .section {
   padding: 12px 14px;
   border-bottom: 1px solid rgba(255,255,255,0.05);
 }
 
-.sectionHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10px;
-}
-
 .sectionLabel {
-  font-size: 0.62rem;
+  font-size: 0.6rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #52525b;
+  letter-spacing: 0.09em;
+  color: #3f3f46;
   display: flex;
   align-items: center;
   gap: 6px;
+  margin-bottom: 10px;
 }
 
-.sectionLabelIcon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  border-radius: 4px;
-  background: rgba(168,85,247,0.15);
-  color: #a855f7;
+.sectionLabelDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #a855f7;
   flex-shrink: 0;
 }
 
-.divider {
-  height: 1px;
-  background: rgba(255,255,255,0.04);
-  margin: 0;
-}
-
-/* ── Mode Toggle ── */
-.modeToggle {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  padding: 3px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 8px;
-}
-
-.modeBtn {
-  flex: 1;
-  padding: 5px 10px;
-  border-radius: 6px;
-  border: none;
-  background: transparent;
-  color: #52525b;
-  font-size: 0.65rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  letter-spacing: 0.02em;
-}
-
-.modeBtn:hover {
-  color: #a1a1aa;
-  background: rgba(255,255,255,0.04);
-}
-
-.modeBtnActive {
-  background: rgba(168,85,247,0.18);
-  color: #d8b4fe;
-  border: 1px solid rgba(168,85,247,0.3) !important;
-  box-shadow: 0 0 12px rgba(168,85,247,0.15);
-}
-
-/* ── Beautify Button ── */
+/* ─── Beautify ─── */
 .beautifyBtn {
   width: 100%;
   padding: 9px 14px;
   border-radius: 10px;
   border: 1px solid rgba(168,85,247,0.3);
-  background: linear-gradient(135deg, rgba(168,85,247,0.15), rgba(99,102,241,0.15));
+  background: linear-gradient(135deg,rgba(168,85,247,0.13),rgba(99,102,241,0.13));
   color: #d8b4fe;
   font-size: 0.72rem;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  letter-spacing: 0.02em;
+  transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-}
-
-.beautifyBtn:hover {
-  background: linear-gradient(135deg, rgba(168,85,247,0.25), rgba(99,102,241,0.25));
-  border-color: rgba(168,85,247,0.5);
-  box-shadow: 0 0 20px rgba(168,85,247,0.2), 0 4px 16px rgba(168,85,247,0.15);
-  transform: translateY(-1px);
-}
-
-.beautifyBtn:active {
-  transform: translateY(0);
-}
-
-/* ── Camera Preset Grid ── */
-.cameraGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 5px;
-}
-
-.cameraPresetBtn {
-  padding: 8px 6px;
-  border-radius: 7px;
-  border: 1px solid rgba(255,255,255,0.06);
-  background: rgba(255,255,255,0.02);
-  color: #71717a;
-  font-size: 0.62rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-}
-
-.cameraPresetBtn:hover {
-  background: rgba(99,102,241,0.1);
-  border-color: rgba(99,102,241,0.3);
-  color: #818cf8;
-  transform: translateY(-1px);
-}
-
-.cameraPresetBtnActive {
-  background: rgba(99,102,241,0.15);
-  border-color: rgba(99,102,241,0.4);
-  color: #a5b4fc;
-  box-shadow: 0 0 12px rgba(99,102,241,0.15);
-}
-
-.cameraPresetIcon {
-  font-size: 1rem;
-  line-height: 1;
-}
-
-.cameraPresetLabel {
-  font-size: 0.58rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-}
-
-/* ── Device Grid ── */
-.deviceGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 5px;
-}
-
-.deviceOption {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 8px 4px;
-  border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.05);
-  background: rgba(255,255,255,0.02);
-  color: #71717a;
-  font-size: 0.6rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s;
-  text-align: center;
-}
-
-.deviceOption:hover {
-  background: rgba(255,255,255,0.05);
-  color: #a1a1aa;
-  border-color: rgba(255,255,255,0.1);
-}
-
-.deviceOptionActive {
-  background: rgba(168,85,247,0.1);
-  border-color: rgba(168,85,247,0.35);
-  color: #c084fc;
-  box-shadow: 0 0 10px rgba(168,85,247,0.1);
-}
-
-.deviceOptionIcon {
-  font-size: 1.1rem;
-  line-height: 1;
-}
-
-/* ── Screen Count Tabs ── */
-.screenTabs {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 5px;
-}
-
-.screenTab {
-  padding: 7px;
-  border-radius: 7px;
-  border: 1px solid rgba(255,255,255,0.06);
-  background: rgba(255,255,255,0.02);
-  color: #52525b;
-  font-size: 0.65rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s;
-  text-align: center;
-}
-
-.screenTab:hover {
-  color: #a1a1aa;
-  background: rgba(255,255,255,0.05);
-}
-
-.screenTabActive {
-  background: rgba(168,85,247,0.12);
-  border-color: rgba(168,85,247,0.3);
-  color: #d8b4fe;
-}
-
-/* ── Layout Pills (offset/side/stack) ── */
-.layoutPills {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 5px;
-  margin-top: 8px;
-}
-
-.layoutPill {
-  padding: 5px 4px;
-  border-radius: 6px;
-  border: 1px solid rgba(255,255,255,0.05);
-  background: rgba(255,255,255,0.02);
-  color: #52525b;
-  font-size: 0.6rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s;
-  text-align: center;
-  text-transform: capitalize;
-}
-
-.layoutPill:hover {
-  color: #a1a1aa;
-  background: rgba(255,255,255,0.04);
-}
-
-.layoutPillActive {
-  background: rgba(168,85,247,0.12);
-  border-color: rgba(168,85,247,0.3);
-  color: #d8b4fe;
-}
-
-/* ── Color Swatches ── */
-.colorSelector {
-  display: flex;
   gap: 7px;
-  flex-wrap: wrap;
+}
+.beautifyBtn:hover {
+  background: linear-gradient(135deg,rgba(168,85,247,0.22),rgba(99,102,241,0.22));
+  border-color: rgba(168,85,247,0.5);
+  box-shadow: 0 0 20px rgba(168,85,247,0.15);
+  transform: translateY(-1px);
+}
+.beautifyBtn:active { transform: translateY(0); }
+
+.glowBadge {
+  padding: 2px 6px;
+  border-radius: 20px;
+  background: rgba(168,85,247,0.14);
+  border: 1px solid rgba(168,85,247,0.22);
+  color: #c084fc;
+  font-size: 0.54rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
-.colorSwatch {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  border: 2px solid transparent;
+/* ─── Layout Presets ─── */
+.presetGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+}
+
+.layoutPresetBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 10px 6px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.02);
+  color: #71717a;
   cursor: pointer;
-  transition: transform 0.15s, box-shadow 0.15s;
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1);
+  transition: all 0.15s cubic-bezier(0.4,0,0.2,1);
+}
+.layoutPresetBtn:hover {
+  background: rgba(255,255,255,0.05);
+  border-color: rgba(255,255,255,0.1);
+  color: #a1a1aa;
+  transform: translateY(-1px);
+}
+.layoutPresetBtnActive {
+  background: rgba(99,102,241,0.14);
+  border-color: rgba(99,102,241,0.38);
+  color: #a5b4fc;
+  box-shadow: 0 0 12px rgba(99,102,241,0.1);
 }
 
-.colorSwatch:hover {
-  transform: scale(1.2);
+.layoutPresetThumb {
+  width: 100%;
+  height: 44px;
+  border-radius: 5px;
+  background: rgba(255,255,255,0.04);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
 }
 
-.colorSwatchActive {
-  border-color: rgba(168,85,247,0.8);
-  box-shadow:
-    0 0 0 1px #0c0c0c,
-    0 0 0 3px rgba(168,85,247,0.6),
-    0 0 10px rgba(168,85,247,0.3);
-  transform: scale(1.15);
+/* SVG diagrams inside preset thumbnails */
+.layoutPresetThumb svg {
+  width: 100%;
+  height: 100%;
 }
 
-/* ── Sliders ── */
-.sliderGroup {
+.layoutPresetLabel {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: inherit;
+}
+
+/* ─── Zoom / Position Controls (shots.so style) ─── */
+.cameraControls {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-.sliderRow {
+.cameraRow {
   display: flex;
   flex-direction: column;
   gap: 5px;
+}
+
+.cameraMeta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cameraLabel {
+  font-size: 0.65rem;
+  color: #71717a;
+  font-weight: 500;
+}
+
+.cameraVal {
+  font-size: 0.62rem;
+  color: #52525b;
+  font-variant-numeric: tabular-nums;
+  font-family: 'DM Mono', monospace;
+}
+
+/* Zoom drag area — shots.so style interactive thumb preview */
+.zoomDragArea {
+  width: 100%;
+  height: 56px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  position: relative;
+  overflow: hidden;
+  cursor: crosshair;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.zoomDragArea:hover {
+  border-color: rgba(168,85,247,0.2);
+}
+
+/* The little device icon that moves inside the drag area */
+.zoomDevicePin {
+  position: absolute;
+  width: 18px;
+  height: 28px;
+  border-radius: 3px;
+  border: 1.5px solid rgba(168,85,247,0.7);
+  background: rgba(168,85,247,0.12);
+  box-shadow: 0 0 8px rgba(168,85,247,0.3);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  transition: left 0.15s ease, top 0.15s ease;
+}
+
+/* Standard range slider */
+.slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 3px;
+  border-radius: 99px;
+  background: rgba(255,255,255,0.08);
+  outline: none;
+  cursor: pointer;
+}
+.slider:hover { background: rgba(255,255,255,0.12); }
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #a855f7;
+  border: 2px solid #0c0c0c;
+  box-shadow: 0 0 8px rgba(168,85,247,0.6);
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.slider::-webkit-slider-thumb:hover {
+  transform: scale(1.3);
+  box-shadow: 0 0 14px rgba(168,85,247,0.8);
+}
+.slider::-moz-range-thumb {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #a855f7;
+  border: 2px solid #0c0c0c;
 }
 
 .sliderMeta {
@@ -344,97 +256,372 @@
   font-size: 0.62rem;
   color: #52525b;
   font-variant-numeric: tabular-nums;
-  font-family: 'DM Mono', 'Fira Mono', monospace;
+  font-family: 'DM Mono', monospace;
 }
 
-.slider {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 100%;
-  height: 3px;
-  border-radius: 99px;
-  background: rgba(255,255,255,0.08);
-  outline: none;
-  cursor: pointer;
-  transition: background 0.2s;
+/* ─── Screen Count Toggle ─── */
+.screenCountRow {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 8px;
 }
 
-.slider:hover {
-  background: rgba(255,255,255,0.12);
-}
-
-.slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 13px;
-  height: 13px;
-  border-radius: 50%;
-  background: #a855f7;
-  border: 2px solid #0c0c0c;
-  box-shadow: 0 0 8px rgba(168,85,247,0.6), 0 0 0 1px rgba(168,85,247,0.3);
-  cursor: pointer;
-  transition: transform 0.15s, box-shadow 0.15s;
-}
-
-.slider::-webkit-slider-thumb:hover {
-  transform: scale(1.3);
-  box-shadow: 0 0 14px rgba(168,85,247,0.8), 0 0 0 2px rgba(168,85,247,0.4);
-}
-
-.slider::-moz-range-thumb {
-  width: 13px;
-  height: 13px;
-  border-radius: 50%;
-  background: #a855f7;
-  border: 2px solid #0c0c0c;
-  box-shadow: 0 0 8px rgba(168,85,247,0.6);
-  cursor: pointer;
-}
-
-/* ── Canvas Area ── */
-.previewContainer {
+.screenCountBtn {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 6px;
+  padding: 7px 4px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #52525b;
+  font-size: 0.65rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.4,0,0.2,1);
+}
+.screenCountBtn:hover { color: #a1a1aa; }
+
+.screenCountBtnActive {
+  background: rgba(168,85,247,0.14);
+  border-color: rgba(168,85,247,0.25);
+  color: #d8b4fe;
+}
+
+.screenCountIcon {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.screenCountBar {
+  width: 8px;
+  height: 14px;
+  border-radius: 2px;
+  border: 1.5px solid currentColor;
+}
+
+/* ─── Layout Pills ─── */
+.layoutPills {
+  display: grid;
+  grid-template-columns: repeat(3,1fr);
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.layoutPill {
+  padding: 5px 4px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.05);
+  background: rgba(255,255,255,0.02);
+  color: #52525b;
+  font-size: 0.6rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+  text-transform: capitalize;
+}
+.layoutPill:hover { color: #a1a1aa; background: rgba(255,255,255,0.04); }
+.layoutPillActive {
+  background: rgba(168,85,247,0.12);
+  border-color: rgba(168,85,247,0.3);
+  color: #d8b4fe;
+}
+
+/* ─── Frame Color ─── */
+.colorSelector {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.colorSwatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1);
+}
+.colorSwatch:hover { transform: scale(1.2); }
+.colorSwatchActive {
+  border-color: rgba(168,85,247,0.8);
+  box-shadow: 0 0 0 1px #0c0c0c, 0 0 0 3px rgba(168,85,247,0.6);
+  transform: scale(1.15);
+}
+
+/* ─── Background Picker ─── */
+.bgCategories {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bgCategory {}
+
+.bgCategoryLabel {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: #52525b;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+
+.bgGrid {
+  display: grid;
+  grid-template-columns: repeat(4,1fr);
+  gap: 4px;
+}
+
+.bgSwatch {
+  aspect-ratio: 1;
+  border-radius: 7px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s;
+  overflow: hidden;
+  position: relative;
+}
+.bgSwatch:hover { transform: scale(1.06); }
+.bgSwatchActive {
+  border-color: #a855f7;
+  box-shadow: 0 0 0 1px rgba(168,85,247,0.4);
+}
+
+/* ─── Export ─── */
+.exportPanelToggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.02);
+  color: #71717a;
+  font-size: 0.65rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.exportPanelToggle:hover { background: rgba(255,255,255,0.05); color: #a1a1aa; }
+
+.exportPanel {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: fadeSlideIn 0.2s cubic-bezier(0.4,0,0.2,1);
+}
+
+.exportModeGrid {
+  display: grid;
+  grid-template-columns: repeat(3,1fr);
+  gap: 5px;
+}
+
+.exportModeBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 4px;
+  border-radius: 7px;
+  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.02);
+  color: #71717a;
+  font-size: 0.58rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.exportModeBtn:hover { background: rgba(255,255,255,0.05); color: #a1a1aa; }
+.exportModeBtnActive {
+  background: rgba(168,85,247,0.12);
+  border-color: rgba(168,85,247,0.3);
+  color: #d8b4fe;
+}
+
+.exportResGrid {
+  display: grid;
+  grid-template-columns: repeat(3,1fr);
+  gap: 5px;
+}
+
+.exportResBtn {
+  padding: 6px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.02);
+  color: #71717a;
+  font-size: 0.65rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+.exportResBtn:hover { color: #a1a1aa; background: rgba(255,255,255,0.05); }
+.exportResBtnActive {
+  background: rgba(168,85,247,0.12);
+  border-color: rgba(168,85,247,0.3);
+  color: #d8b4fe;
+}
+
+.exportExecuteBtn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 9px;
+  border-radius: 8px;
+  border: none;
+  background: linear-gradient(135deg,#7c3aed,#4f46e5);
+  color: white;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 10px rgba(124,58,237,0.35);
+}
+.exportExecuteBtn:hover {
+  box-shadow: 0 4px 16px rgba(124,58,237,0.5);
+  transform: translateY(-1px);
+}
+
+/* ─── Top-bar export btn ─── */
+.exportBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 13px;
+  border-radius: 7px;
+  border: none;
+  background: linear-gradient(135deg,#7c3aed,#4f46e5);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 10px rgba(124,58,237,0.35);
+}
+.exportBtn:hover {
+  box-shadow: 0 4px 16px rgba(124,58,237,0.5);
+  transform: translateY(-1px);
+}
+
+/* ═══════════════════════════════════════════════
+   CANVAS — Fixed size, device floats inside
+   ═══════════════════════════════════════════════ */
+
+.previewContainer {
+  flex: 1;
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
   background: #090909;
   position: relative;
   overflow: hidden;
+  /* fills all available space from SplitPanel */
+  height: 100%;
+  width: 100%;
 }
 
-/* Subtle grid */
+/* Static subtle grid */
 .previewContainer::before {
   content: '';
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.022) 1px, transparent 1px);
+    linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,0.018) 1px, transparent 1px);
   background-size: 32px 32px;
   pointer-events: none;
+  z-index: 0;
 }
 
-/* Ambient corner glows */
+/* Static corner glows — NO animation, NO conic-gradient */
 .previewContainer::after {
   content: '';
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse 60% 40% at 20% 80%, rgba(168,85,247,0.04) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 35% at 80% 20%, rgba(99,102,241,0.04) 0%, transparent 60%);
+    radial-gradient(ellipse 50% 40% at 10% 90%, rgba(168,85,247,0.045) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 35% at 90% 10%, rgba(99,102,241,0.035) 0%, transparent 60%);
   pointer-events: none;
+  z-index: 0;
+  /* explicitly no animation */
+  animation: none !important;
 }
 
-.canvas {
+/*
+  The actual canvas background card.
+  FIXED aspect-ratio, centered inside previewContainer.
+  Never changes size when device changes.
+*/
+.canvasCard {
   position: relative;
+  z-index: 1;
+  /* Take up as much of the container as possible while respecting ratio */
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  transition: border-radius 0.3s ease;
-  z-index: 1;
 }
 
-/* ── Upload Placeholder ── */
+/*
+  Inner bg — this is what gets exported.
+  Fixed 16:9 by default, centered, not resized by device changes.
+*/
+.canvasBg {
+  position: relative;
+  /* Always 16:9, max-width fills container */
+  width: min(100%, calc(100vh * 16/9));
+  aspect-ratio: 16/9;
+  border-radius: 20px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-radius 0.3s ease;
+  /* Clip any device overflow */
+}
+
+/* Override any rotation/animation that DeviceFrame might inject */
+.deviceWrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* transition for smooth zoom/pan */
+  transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+  /* Kill any pseudo-element animations from DeviceFrame children */
+}
+
+/* Nuclear option: kill all rotating backgrounds inside the canvas */
+.deviceWrapper *::before,
+.deviceWrapper *::after {
+  animation: none !important;
+  /* If the rotation comes from a conic-gradient background-image,
+     we can't override it here — it needs to be fixed in DeviceFrame.
+     But this kills keyframe-based animations. */
+}
+
+/* ─── Upload placeholder ─── */
 .shotsPlaceholder {
   display: flex;
   flex-direction: column;
@@ -444,20 +631,9 @@
   height: 100%;
   min-height: 180px;
   gap: 8px;
-  background: linear-gradient(135deg, #111 0%, #0a0a0a 100%);
-  color: #3f3f46;
+  background: rgba(255,255,255,0.02);
   cursor: pointer;
-  transition: background 0.2s;
-}
-
-.shotsPlaceholder:hover {
-  background: linear-gradient(135deg, #151515 0%, #0d0d0d 100%);
-}
-
-.placeholderIcons {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  user-select: none;
 }
 
 .mediaStack {
@@ -467,18 +643,12 @@
   justify-content: center;
 }
 
-.mediaIcon {
-  width: 32px;
-  height: 32px;
-  color: #3f3f46;
-}
+.mediaIcon { width: 28px; height: 28px; color: #3f3f46; }
 
 .plusCircle {
   position: absolute;
-  bottom: -5px;
-  right: -5px;
-  width: 16px;
-  height: 16px;
+  bottom: -4px; right: -4px;
+  width: 14px; height: 14px;
   border-radius: 50%;
   background: white;
   display: flex;
@@ -486,143 +656,12 @@
   justify-content: center;
 }
 
-.placeholderText {
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: #52525b;
-  margin-top: 4px;
-}
+.placeholderText { font-size: 0.68rem; font-weight: 600; color: #52525b; margin-top: 4px; }
+.placeholderSubtext { font-size: 0.58rem; color: #3f3f46; }
+.uploadedImage { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-.placeholderSubtext {
-  font-size: 0.6rem;
-  color: #3f3f46;
-}
-
-.uploadedImage {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-/* ── Floating Canvas Overlay Controls (Phase 3 prep) ── */
-.canvasOverlay {
-  position: absolute;
-  top: 12px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  z-index: 50;
-}
-
-.canvasChip {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 11px;
-  border-radius: 20px;
-  background: rgba(0,0,0,0.65);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(255,255,255,0.08);
-  color: #a1a1aa;
-  font-size: 0.65rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-  white-space: nowrap;
-}
-
-.canvasChip:hover {
-  background: rgba(0,0,0,0.8);
-  color: #e4e4e7;
-  border-color: rgba(255,255,255,0.14);
-}
-
-.canvasChipActive {
-  background: rgba(168,85,247,0.18);
-  border-color: rgba(168,85,247,0.35);
-  color: #d8b4fe;
-}
-
-/* ── Export Button (top bar) ── */
-.exportBtn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 13px;
-  border-radius: 7px;
-  border: none;
-  background: linear-gradient(135deg, #7c3aed, #4f46e5);
-  color: white;
-  font-size: 0.7rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 10px rgba(124,58,237,0.35);
-}
-
-.exportBtn:hover {
-  background: linear-gradient(135deg, #8b5cf6, #6366f1);
-  box-shadow: 0 4px 16px rgba(124,58,237,0.5);
-  transform: translateY(-1px);
-}
-
-.exportBtn:active {
-  transform: translateY(0);
-}
-
-/* ── Glow Badge ── */
-.glowBadge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 7px;
-  border-radius: 20px;
-  background: rgba(168,85,247,0.12);
-  border: 1px solid rgba(168,85,247,0.2);
-  color: #c084fc;
-  font-size: 0.56rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-/* ── Pro-only section reveal animation ── */
-.proSection {
-  animation: fadeSlideIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
+/* ─── Animations ─── */
 @keyframes fadeSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* ── Select override to match dark theme ── */
-.darkSelect {
-  width: 100%;
-  padding: 6px 8px;
-  border-radius: 7px;
-  border: 1px solid rgba(255,255,255,0.07);
-  background: rgba(255,255,255,0.03);
-  color: #a1a1aa;
-  font-size: 0.68rem;
-  outline: none;
-  cursor: pointer;
-  transition: border-color 0.15s;
-  appearance: none;
-  -webkit-appearance: none;
-}
-
-.darkSelect:focus {
-  border-color: rgba(168,85,247,0.4);
-  color: #e4e4e7;
+  from { opacity: 0; transform: translateY(-5px); }
+  to   { opacity: 1; transform: translateY(0); }
 }

@@ -136,24 +136,6 @@
     inset 0 -1px 2px rgba(0, 0, 0, 0.5);
 }
 
-/* Animated rim light — top-left corner glare */
-.iphoneFrame > .rimLight {
-  position: absolute;
-  top: -3.5px; left: -3.5px; right: -3.5px; bottom: -3.5px;
-  border-radius: calc(var(--frame-radius, 44px) + 3.5px);
-  pointer-events: none;
-  z-index: 0;
-  background: conic-gradient(
-    from 210deg,
-    rgba(255,255,255,0) 0deg,
-    rgba(255,255,255,0.18) 30deg,
-    rgba(255,255,255,0) 60deg,
-    rgba(255,255,255,0) 360deg
-  );
-  animation: rimRotate 8s linear infinite;
-  opacity: 0.8;
-}
-
 @keyframes rimRotate {
   from { transform: rotate(0deg);   }
   to   { transform: rotate(360deg); }

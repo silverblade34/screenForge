@@ -226,7 +226,7 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
 
       {/* Ground reflection */}
       {showReflection && (
-        <div className={s.groundReflection} aria-hidden="true">
+        <div className={s.groundReflection} aria-hidden="true" data-export-hide="true">
           <div className={s.groundReflectionInner}>
             <RawFrame model={model} color={color} shadowIntensity={0}>
               {children}

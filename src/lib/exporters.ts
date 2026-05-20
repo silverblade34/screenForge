@@ -22,14 +22,36 @@ export async function exportElementToPDF(element: HTMLElement, filename: string)
   pdf.save(filename);
 }
 
-export async function exportElementToPNG(element: HTMLElement, filename: string) {
+export async function exportElementToPNG(
+  element: HTMLElement,
+  filename: string,
+  scale = 2,
+) {
   const html2canvas = (await import('html2canvas')).default;
-  const canvas = await html2canvas(element, {
-    scale: 2,
-    useCORS: true,
-    allowTaint: true,
-    backgroundColor: null,
-  });
+
+  // Hide ground-reflection elements so they don't appear in the export
+  const hidden = Array.from(
+    element.querySelectorAll<HTMLElement>('[data-export-hide="true"]'),
+  );
+  hidden.forEach(el => { el.style.visibility = 'hidden'; });
+
+  let canvas: HTMLCanvasElement;
+  try {
+    canvas = await html2canvas(element, {
+      scale,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: null,
+      // Ensure the captured area matches the element's bounding box exactly
+      width: element.offsetWidth,
+      height: element.offsetHeight,
+      windowWidth: element.offsetWidth,
+      windowHeight: element.offsetHeight,
+    });
+  } finally {
+    // Always restore visibility even if capture throws
+    hidden.forEach(el => { el.style.visibility = ''; });
+  }
 
   const link = document.createElement('a');
   link.download = filename;
