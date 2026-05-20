@@ -38,22 +38,15 @@ export async function exportElementToPNG(
 
   let canvas: HTMLCanvasElement;
   try {
-    // Get the element's position relative to the page to capture only this element
-    const rect = element.getBoundingClientRect();
+    // Let html2canvas auto-detect the element bounds — do NOT pass x/y/width/height
+    // because those are in screen-pixel units and conflict with the `scale` multiplier,
+    // causing only a fraction (1/scale²) of the element to appear in the output.
     canvas = await html2canvas(element, {
       scale,
       useCORS: true,
       allowTaint: true,
       backgroundColor: null,
       logging: false,
-      // Correct for any page scroll so the capture aligns with the element
-      scrollX: -window.scrollX,
-      scrollY: -window.scrollY,
-      // Clip to the element's visible area only
-      x: rect.left + window.scrollX,
-      y: rect.top  + window.scrollY,
-      width:  rect.width,
-      height: rect.height,
     });
   } finally {
     hidden.forEach(el => { el.style.visibility = ''; });
