@@ -2,8 +2,9 @@
 
 import React from 'react';
 import {
-  Zap, Sliders, Film, Wind, RotateCw, Maximize2, Move, Sparkles, Box, Rocket, Eye, Slash,
-  Activity, Clock, Settings2, Download, Gauge, ScrollText, PlayCircle, PlusCircle, Network
+  Zap, Sliders, Film, Wind, Maximize2, Move, Sparkles, Eye, Slash,
+  Activity, Clock, Settings2, Download, Gauge, ScrollText, PlayCircle, PlusCircle, Network,
+  Layers, ZoomIn,
 } from 'lucide-react';
 import {
   AnimationPreset, EasingType, SceneScene, SceneMode,
@@ -34,11 +35,11 @@ const EASINGS: { value: EasingType; label: string }[] = [
 ];
 
 const SCENE_PRESETS: { label: string; desc: string; animation: AnimationPreset; easing: EasingType }[] = [
-  { label: 'App Showcase',    desc: 'Floating iPhone with glow',    animation: 'startup-launch',   easing: 'spring' },
-  { label: 'Dashboard Demo',  desc: 'MacBook cinematic pan',        animation: 'camera-pan',        easing: 'ease-out' },
-  { label: 'Feature Zoom',    desc: 'Dolly in on detail',          animation: 'dolly-zoom',        easing: 'ease-in-out' },
-  { label: 'Perspective Hero',desc: '3D perspective unfold',        animation: 'perspective-reveal', easing: 'spring' },
-  { label: 'Orbit Launch',    desc: 'Orbital rotation entrance',   animation: 'orbit',             easing: 'ease-in-out' },
+  { label: 'App Showcase',    desc: 'Floating drift loop',           animation: 'floating-drift',  easing: 'ease-in-out' },
+  { label: 'Hero Launch',     desc: 'Fade + scale entrance',         animation: 'hero-reveal',     easing: 'ease-out' },
+  { label: 'Feature Focus',   desc: 'Rack-focus lens pull',          animation: 'focus-pull',      easing: 'ease-out' },
+  { label: 'Dashboard Demo',  desc: 'Camera slide + stable device',  animation: 'camera-slide',    easing: 'ease-out' },
+  { label: 'Detail Zoom',     desc: 'Precision zoom for showcases',  animation: 'precision-zoom',  easing: 'spring'   },
 ];
 
 const getAnimationIcon = (iconName: string) => {
@@ -46,15 +47,14 @@ const getAnimationIcon = (iconName: string) => {
     case 'slash':      return <Slash size={12} />;
     case 'film':       return <Film size={12} />;
     case 'wind':       return <Wind size={12} />;
-    case 'rotate-cw': return <RotateCw size={12} />;
     case 'maximize-2': return <Maximize2 size={12} />;
     case 'move':       return <Move size={12} />;
     case 'sparkles':   return <Sparkles size={12} />;
-    case 'box':        return <Box size={12} />;
-    case 'rocket':     return <Rocket size={12} />;
     case 'eye':        return <Eye size={12} />;
     case 'zap':        return <Zap size={12} />;
     case 'scroll':     return <ScrollText size={12} />;
+    case 'layers':     return <Layers size={12} />;
+    case 'zoom-in':    return <ZoomIn size={12} />;
     default:           return <Sliders size={12} />;
   }
 };
@@ -111,7 +111,7 @@ export default function RightSidebar({
           </button>
         </div>
         <p style={{ fontSize: '0.6rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-          {mode === 'animation' && 'Standard 3D device motion and camera transitions.'}
+          {mode === 'animation' && 'Cinematic camera-first motion — elegant, Apple-inspired movement.'}
           {mode === 'scroll' && 'Upload a long vertical image to auto-scroll inside the screen.'}
           {mode === 'flow' && 'Click on the device screen to add interactive hotspots that link to other scenes.'}
         </p>

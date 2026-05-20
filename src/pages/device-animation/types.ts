@@ -10,16 +10,14 @@ export type SceneMode = 'animation' | 'scroll' | 'flow';
 
 export type AnimationPreset =
   | 'none'
-  | 'cinematic-reveal'
-  | 'floating'
-  | 'orbit'
-  | 'dolly-zoom'
-  | 'camera-pan'
-  | 'parallax'
-  | 'perspective-reveal'
-  | 'focus-blur'
-  | 'bounce'
-  | 'startup-launch';
+  | 'floating-drift'
+  | 'cinematic-push'
+  | 'focus-pull'
+  | 'hero-reveal'
+  | 'ambient-motion'
+  | 'depth-parallax'
+  | 'camera-slide'
+  | 'precision-zoom';
 
 export type EasingType = 'spring' | 'ease-out' | 'ease-in-out' | 'linear' | 'anticipate' | 'bounce';
 
@@ -109,17 +107,15 @@ export const BACKGROUNDS: BackgroundOption[] = [
 ];
 
 export const ANIMATION_PRESETS: { value: AnimationPreset; label: string; icon: string; desc: string }[] = [
-  { value: 'none',               label: 'No Animation',       icon: 'slash',      desc: 'Static device, pure camera movement' },
-  { value: 'cinematic-reveal',   label: 'Cinematic Reveal',   icon: 'film',       desc: 'Dramatic entrance from below' },
-  { value: 'floating',           label: 'Float & Breathe',    icon: 'wind',       desc: 'Organic floating loop' },
-  { value: 'orbit',              label: 'Orbit Rotation',     icon: 'rotate-cw',  desc: 'Slow 3D orbit spin' },
-  { value: 'dolly-zoom',         label: 'Dolly Zoom',         icon: 'maximize-2', desc: 'Hitchcock perspective shift' },
-  { value: 'camera-pan',         label: 'Camera Pan',         icon: 'move',       desc: 'Horizontal cinematic pan' },
-  { value: 'parallax',           label: 'Parallax Drift',     icon: 'sparkles',   desc: 'Multi-layer depth drift' },
-  { value: 'perspective-reveal', label: 'Perspective Reveal', icon: 'box',        desc: 'Unfold from flat to 3D' },
-  { value: 'startup-launch',     label: 'Startup Launch',     icon: 'rocket',     desc: 'Glow + float entrance' },
-  { value: 'focus-blur',         label: 'Focus Blur',         icon: 'eye',        desc: 'Rack focus cinema effect' },
-  { value: 'bounce',             label: 'Soft Bounce',        icon: 'zap',        desc: 'Spring bounce entrance' },
+  { value: 'none',            label: 'Static',           icon: 'slash',      desc: 'No motion — pure camera control' },
+  { value: 'floating-drift',  label: 'Floating Drift',   icon: 'wind',       desc: 'Ultra-subtle levitation loop' },
+  { value: 'cinematic-push',  label: 'Cinematic Push',   icon: 'move',       desc: 'Slow camera push-in with micro parallax' },
+  { value: 'focus-pull',      label: 'Focus Pull',       icon: 'eye',        desc: 'Lens rack-focus cinematic feel' },
+  { value: 'hero-reveal',     label: 'Hero Reveal',      icon: 'film',       desc: 'Fade + drift + scale entrance' },
+  { value: 'ambient-motion',  label: 'Ambient Motion',   icon: 'sparkles',   desc: 'Continuous idle loop for demos' },
+  { value: 'depth-parallax',  label: 'Depth Parallax',   icon: 'layers',     desc: 'Fake cinematic depth — no rotation' },
+  { value: 'camera-slide',    label: 'Camera Slide',     icon: 'maximize-2', desc: 'Horizontal cinematic pan — stable device' },
+  { value: 'precision-zoom',  label: 'Precision Zoom',   icon: 'zoom-in',    desc: 'Smooth zoom into UI for feature showcases' },
 ];
 
 const defScene = (
@@ -132,9 +128,9 @@ const defScene = (
 });
 
 export const DEFAULT_SCENES: SceneScene[] = [
-  defScene('s1', 'Intro',   3, 'cinematic-reveal',   'spring',      { ...DEFAULT_CAMERA },                          '#7c3aed'),
-  defScene('s2', 'Feature', 4, 'floating',           'ease-in-out', { ...DEFAULT_CAMERA, zoom: 1.1, panY: -30 },   '#0ea5e9'),
-  defScene('s3', 'Reveal',  3, 'perspective-reveal', 'ease-out',    { ...DEFAULT_CAMERA, tiltX: 10, zoom: 0.9 },   '#10b981'),
+  defScene('s1', 'Intro',   3.5, 'hero-reveal',      'ease-out',    { ...DEFAULT_CAMERA },                        '#7c3aed'),
+  defScene('s2', 'Feature', 4,   'floating-drift',   'ease-in-out', { ...DEFAULT_CAMERA, zoom: 1.08, panY: -20 },'#0ea5e9'),
+  defScene('s3', 'Reveal',  3,   'precision-zoom',   'ease-out',    { ...DEFAULT_CAMERA, zoom: 1.15 },            '#10b981'),
 ];
 
 export const DEFAULT_LAYERS: Layer[] = [

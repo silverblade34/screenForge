@@ -42,79 +42,154 @@ import StudioTimeline from './StudioTimeline';
 import CanvasArea from './CanvasArea';
 import s from './page.module.css';
 
-/* ─── Animation variant builder ──────────────────────────────── */
-function getVariants(animation: AnimationPreset, easing: EasingType) {
-  const springConf: Transition = { type: 'spring', stiffness: 100, damping: 14 };
-  // Map our EasingType strings to Framer Motion camelCase names
-  const fmEase = easing === 'ease-out' ? 'easeOut'
-    : easing === 'ease-in-out' ? 'easeInOut'
-    : easing === 'anticipate' ? ([0.36, 0, 0.66, -0.56] as [number,number,number,number])
-    : easing === 'bounce' ? 'backOut'
-    : easing;
-  const ease: Transition = easing === 'spring' ? springConf
-    : { type: 'tween', ease: fmEase } as Transition;
+/* ─── Animation variant builder ──────────────────────────────────────────────
+   ROTATION LIMITS (2D device pipeline):
+     rotateX  ≤ ±4°   rotateY  ≤ ±5°   rotateZ  ≤ ±2°
+   Motion philosophy: camera-first, cinematic, Apple-inspired — device stays
+   legible at all times. No aggressive perspective skew or fake 3D orbiting.
+─────────────────────────────────────────────────────────────────────────── */
+function getVariants(animation: AnimationPreset, _easing: EasingType) {
+  // Shared easing curves — all tuned for premium smoothness
+  const APPLE_EASE = [0.25, 0.1, 0.25, 1] as [number, number, number, number];
+  const CINEMA_EASE = [0.16, 1, 0.3, 1] as [number, number, number, number];
+  const SOFT_SPRING: Transition = { type: 'spring', stiffness: 60, damping: 18, mass: 1.1 };
 
   switch (animation) {
+    /* ── 1. Static ─────────────────────────────────────────────── */
     case 'none':
       return {
-        initial: { opacity: 1, x: 0, y: 0, scale: 1, rotateX: 0, rotateY: 0, rotateZ: 0 },
-        animate: { opacity: 1, x: 0, y: 0, scale: 1, rotateX: 0, rotateY: 0, rotateZ: 0 },
-        transition: { duration: 0.1 } as Transition,
+        initial: { opacity: 1, x: 0, y: 0, scale: 1 },
+        animate: { opacity: 1, x: 0, y: 0, scale: 1 },
+        transition: { duration: 0 } as Transition,
       };
-    case 'cinematic-reveal':
+
+    /* ── 2. Floating Drift ────────────────────────────────────────
+       Ultra-subtle levitation loop. Scale "breathes" slowly.
+       Tilt kept to ±2° for a hint of depth without skew.         */
+    case 'floating-drift':
       return {
-        initial: { opacity: 0, y: 120, scale: 0.82, rotateX: 40 },
-        animate: { opacity: 1, y: 0, scale: 1, rotateX: 0 },
-        transition: { ...ease, duration: 1.4 },
+        initial: { y: 0, scale: 1, rotateX: 0, rotateY: 0 },
+        animate: {
+          y: [-10, 10, -10],
+          scale: [1, 1.012, 1],
+          rotateX: [-1, 1, -1],
+          rotateY: [-2, 2, -2],
+        },
+        transition: {
+          duration: 8,
+          repeat: Infinity,
+          ease: 'easeInOut',
+          times: [0, 0.5, 1],
+        } as Transition,
       };
-    case 'floating':
+
+    /* ── 3. Cinematic Push ────────────────────────────────────────
+       Camera pushes in slowly. Device starts slightly further
+       away (scale 0.94) and settles with micro-parallax drift.   */
+    case 'cinematic-push':
       return {
-        initial: { y: 0, rotateX: 6, rotateY: -8 },
-        animate: { y: [-18, 18, -18], rotateX: [6, 10, 6], rotateY: [-8, -4, -8] },
-        transition: { duration: 7, repeat: Infinity, ease: 'easeInOut' } as Transition,
+        initial: { scale: 0.94, opacity: 0, y: 14 },
+        animate: { scale: 1, opacity: 1, y: 0 },
+        transition: {
+          duration: 1.6,
+          ease: CINEMA_EASE,
+        } as Transition,
       };
-    case 'orbit':
+
+    /* ── 4. Focus Pull ───────────────────────────────────────────
+       Rack focus: blurry → sharp. Light scale shift simulates
+       lens breathing. No rotation at all.                        */
+    case 'focus-pull':
       return {
-        initial: { rotateY: -180, opacity: 0 },
-        animate: { rotateY: 0, opacity: 1 },
-        transition: { ...ease, duration: 2 },
-      };
-    case 'dolly-zoom':
-      return {
-        initial: { scale: 2.5, opacity: 0, filter: 'blur(8px)' },
-        animate: { scale: 1, opacity: 1, filter: 'blur(0px)' },
-        transition: { duration: 1.8, ease: [0.16, 1, 0.3, 1] as [number,number,number,number] } as Transition,
-      };
-    case 'camera-pan':
-      return {
-        initial: { x: -200, opacity: 0 },
-        animate: { x: 0, opacity: 1 },
-        transition: { ...ease, duration: 1.6 },
-      };
-    case 'parallax':
-      return {
-        initial: { x: 60, y: 60, rotateZ: -4 },
-        animate: { x: [-60, 60, -60], y: [-40, 40, -40], rotateZ: [4, -4, 4] },
-        transition: { duration: 9, repeat: Infinity, ease: 'linear' } as Transition,
-      };
-    case 'perspective-reveal':
-      return {
-        initial: { rotateX: 60, scale: 0.7, opacity: 0, y: 80 },
-        animate: { rotateX: 0, scale: 1, opacity: 1, y: 0 },
-        transition: { ...ease, duration: 1.5 },
-      };
-    case 'startup-launch':
-      return {
-        initial: { y: 80, opacity: 0, scale: 0.85, filter: 'blur(12px)' },
-        animate: { y: [-8, 8, -8], opacity: 1, scale: 1, filter: 'blur(0px)' },
-        transition: { duration: 6, repeat: Infinity, ease: 'easeInOut' } as Transition,
-      };
-    case 'focus-blur':
-      return {
-        initial: { filter: 'blur(24px)', opacity: 0, scale: 1.05 },
+        initial: { filter: 'blur(16px)', opacity: 0, scale: 1.03 },
         animate: { filter: 'blur(0px)', opacity: 1, scale: 1 },
-        transition: { duration: 1.8, ease: [0.16, 1, 0.3, 1] as [number,number,number,number] } as Transition,
+        transition: {
+          duration: 1.4,
+          ease: CINEMA_EASE,
+        } as Transition,
       };
+
+    /* ── 5. Hero Reveal ──────────────────────────────────────────
+       Clean entrance: fade + gentle upward drift + scale 0.96→1.
+       Blur clears as device arrives — mimics Apple keynote style.*/
+    case 'hero-reveal':
+      return {
+        initial: { opacity: 0, y: 32, scale: 0.96, filter: 'blur(8px)' },
+        animate: { opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' },
+        transition: {
+          duration: 1.2,
+          ease: CINEMA_EASE,
+        } as Transition,
+      };
+
+    /* ── 6. Ambient Motion ───────────────────────────────────────
+       Designed for idle/demo loops. Near-imperceptible drift.
+       rotateZ ≤ 1° — only enough to feel alive.                 */
+    case 'ambient-motion':
+      return {
+        initial: { x: 0, y: 0, scale: 1, rotateZ: 0 },
+        animate: {
+          x: [-6, 6, -6],
+          y: [-8, 4, -8],
+          scale: [1, 1.008, 1],
+          rotateZ: [-0.5, 0.5, -0.5],
+        },
+        transition: {
+          duration: 12,
+          repeat: Infinity,
+          ease: 'easeInOut',
+          times: [0, 0.5, 1],
+        } as Transition,
+      };
+
+    /* ── 7. Depth Parallax ───────────────────────────────────────
+       Simulates multi-plane depth by drifting on Y with a slight
+       scale breath. The camera (not the device) does the heavy
+       lifting — zero rotation.                                   */
+    case 'depth-parallax':
+      return {
+        initial: { y: 0, scale: 1, opacity: 0 },
+        animate: {
+          y: [-14, 14, -14],
+          scale: [1, 1.018, 1],
+          opacity: 1,
+        },
+        transition: {
+          duration: 10,
+          repeat: Infinity,
+          ease: 'easeInOut',
+          times: [0, 0.5, 1],
+          opacity: { duration: 0.6, ease: 'easeOut' },
+        } as Transition,
+      };
+
+    /* ── 8. Camera Slide ─────────────────────────────────────────
+       Horizontal pan entrance inspired by SaaS trailers.
+       Device orientation stays perfectly stable — no tilt.      */
+    case 'camera-slide':
+      return {
+        initial: { x: -80, opacity: 0, scale: 0.97 },
+        animate: { x: 0, opacity: 1, scale: 1 },
+        transition: {
+          duration: 1.4,
+          ease: APPLE_EASE,
+        } as Transition,
+      };
+
+    /* ── 9. Precision Zoom ───────────────────────────────────────
+       Smooth zoom-in for feature showcases. Scale from 0.88 →
+       1 with a very soft spring landing. Zero rotation.         */
+    case 'precision-zoom':
+      return {
+        initial: { scale: 0.88, opacity: 0, filter: 'blur(4px)' },
+        animate: { scale: 1, opacity: 1, filter: 'blur(0px)' },
+        transition: {
+          ...SOFT_SPRING,
+          opacity: { duration: 0.5, ease: 'easeOut' },
+          filter: { duration: 0.6, ease: 'easeOut' },
+        } as Transition,
+      };
+
     default:
       return { initial: {}, animate: {}, transition: {} };
   }
