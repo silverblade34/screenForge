@@ -656,7 +656,6 @@ export default function MockupStudioPage() {
 
   const singleDevice = (
     <div
-      ref={deviceRef}
       style={{ cursor: 'pointer', display: 'inline-flex' }}
       onClick={() => { setActiveSlot(1); fileInputRef.current?.click(); }}
       onDragOver={handleDragOver}
@@ -672,7 +671,7 @@ export default function MockupStudioPage() {
   );
 
   const dualDevice = (
-    <div ref={deviceRef}
+    <div
       style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       {/* Device 1 — slightly smaller, positioned left */}
       <div
@@ -722,10 +721,10 @@ export default function MockupStudioPage() {
         <div
           ref={canvasBgRef}
           className={s.canvasBg}
-          style={bg.style}
+          style={(exportMode === 'device' || exportMode === 'tight') ? { ...bg.style, background: 'transparent' } : bg.style}
         >
           {/* Device floats absolutely inside the fixed bg */}
-          <div className={s.deviceWrapper} style={deviceStyle}>
+          <div ref={deviceRef} className={s.deviceWrapper} style={deviceStyle}>
             {screens === 2 && device.includes('iphone') ? dualDevice : singleDevice}
           </div>
         </div>

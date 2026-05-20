@@ -50,7 +50,7 @@ const COPY = {
 
     tools: [
       {
-        title: 'Scene Composer',
+        title: 'Mockup Studio',
         desc:
           'Diseña composiciones premium de producto con dispositivos 3D, fondos cinematográficos, iluminación profesional y layouts multi-pantalla.',
         tags: [
@@ -61,7 +61,7 @@ const COPY = {
         ],
       },
       {
-        title: 'Motion Studio',
+        title: 'Device Animation',
         desc:
           'Anima interfaces con cámara virtual, timeline multi-escena, presets de movimiento cinematográfico y control total del ritmo visual.',
         tags: [
@@ -268,7 +268,7 @@ const COPY = {
 
     tools: [
       {
-        title: 'Scene Composer',
+        title: 'Mockup Studio',
         desc:
           'Design premium product compositions with 3D devices, cinematic backgrounds, professional lighting, and multi-screen layouts.',
         tags: [
@@ -279,7 +279,7 @@ const COPY = {
         ],
       },
       {
-        title: 'Motion Studio',
+        title: 'Device Animation',
         desc:
           'Animate interfaces with a virtual camera system, multi-scene timeline, cinematic motion presets, and full pacing control.',
         tags: [
@@ -510,20 +510,22 @@ function HeroDeviceMock({ dim = false }: { dim?: boolean }) {
 /* ── Tool cards data ───────────────────────────────────────── */
 const TOOL_META = [
   {
-    href:        '/mockup-studio',
-    icon:        Monitor,
-    iconBg:      'rgba(124,58,237,0.12)',
-    iconBorder:  'rgba(124,58,237,0.25)',
-    iconColor:   '#a78bfa',
-    previewBg:   'linear-gradient(135deg, #0f0c29, #1a0a3d)',
+    href: '/mockup-studio',
+    icon: Monitor,
+    iconBg: 'rgba(124,58,237,0.12)',
+    iconBorder: 'rgba(124,58,237,0.25)',
+    iconColor: '#a78bfa',
+    previewBg: 'linear-gradient(135deg, #0f0c29, #1a0a3d)',
+    image: '/mockup-studio.png',
   },
   {
-    href:        '/device-animation',
-    icon:        Clapperboard,
-    iconBg:      'rgba(14,165,233,0.12)',
-    iconBorder:  'rgba(14,165,233,0.25)',
-    iconColor:   '#38bdf8',
-    previewBg:   'linear-gradient(135deg, #020f1c, #0a1628)',
+    href: '/device-animation',
+    icon: Clapperboard,
+    iconBg: 'rgba(14,165,233,0.12)',
+    iconBorder: 'rgba(14,165,233,0.25)',
+    iconColor: '#38bdf8',
+    previewBg: 'linear-gradient(135deg, #020f1c, #0a1628)',
+    image: '/device-animation.png',
   },
 ];
 
@@ -567,9 +569,9 @@ export default function LandingPage() {
         </div>
 
         <ul className={s.navLinks}>
-          <li><a href="#tools"    className={s.navLink}>{t.nav.tools}</a></li>
+          <li><a href="#tools" className={s.navLink}>{t.nav.tools}</a></li>
           <li><a href="#workflow" className={s.navLink}>{t.nav.workflow}</a></li>
-          <li><a href="#pricing"  className={s.navLink}>{t.nav.pricing}</a></li>
+          <li><a href="#pricing" className={s.navLink}>{t.nav.pricing}</a></li>
         </ul>
 
         <div className={s.navCta}>
@@ -680,7 +682,11 @@ export default function LandingPage() {
                 </div>
                 <div className={s.toolCardPreview} style={{ background: meta.previewBg }} aria-hidden="true">
                   <div className={s.toolCardPreviewGrid} />
-                  <Icon size={28} color="rgba(255,255,255,0.06)" />
+                  {meta.image ? (
+                    <img src={meta.image} alt={tool.title} style={{ position: 'absolute', width: '100%', height: '100%', objectFit: 'contain', opacity: 0.85 }} />
+                  ) : (
+                    <Icon size={28} color="rgba(255,255,255,0.06)" />
+                  )}
                 </div>
                 <ArrowUpRight size={16} className={s.toolCardArrow} aria-hidden="true" />
               </Link>
@@ -797,9 +803,9 @@ export default function LandingPage() {
         <div className={s.footerInner}>
           <div className={s.footerLogo}>ScreenForge</div>
           <ul className={s.footerLinks}>
-            <li><a href="#tools"    className={s.footerLink}>{t.nav.tools}</a></li>
+            <li><a href="#tools" className={s.footerLink}>{t.nav.tools}</a></li>
             <li><a href="#workflow" className={s.footerLink}>{t.nav.workflow}</a></li>
-            <li><a href="#pricing"  className={s.footerLink}>{t.nav.pricing}</a></li>
+            <li><a href="#pricing" className={s.footerLink}>{t.nav.pricing}</a></li>
           </ul>
           <div className={s.footerCopy}>{t.footerCopy}</div>
         </div>

@@ -12,7 +12,8 @@ export type AnimationPreset =
   | 'perspective-reveal'
   | 'focus-blur'
   | 'bounce'
-  | 'startup-launch';
+  | 'startup-launch'
+  | 'scroll-reveal';
 
 export type EasingType = 'spring' | 'ease-out' | 'ease-in-out' | 'linear' | 'anticipate' | 'bounce';
 
@@ -38,11 +39,13 @@ export interface Layer {
 export interface SceneScene {
   id: string;
   name: string;
-  duration: number;   // seconds
+  duration: number;        // seconds
   animation: AnimationPreset;
   easing: EasingType;
   camera: CameraState;
-  color: string;      // timeline colour
+  color: string;           // timeline colour
+  cameraSpeed: number;     // 0.1 – 3.0 (multiplier for camera transition duration)
+  scrollOffset: number;   // 0–100 % — for scroll-reveal animation
 }
 
 export interface BackgroundOption {
@@ -84,23 +87,24 @@ export const BACKGROUNDS: BackgroundOption[] = [
 ];
 
 export const ANIMATION_PRESETS: { value: AnimationPreset; label: string; icon: string; desc: string }[] = [
-  { value: 'none',                label: 'No Animation',        icon: 'slash', desc: 'Static device, pure camera movement' },
-  { value: 'cinematic-reveal',    label: 'Cinematic Reveal',    icon: 'film', desc: 'Dramatic entrance from below' },
-  { value: 'floating',            label: 'Float & Breathe',     icon: 'wind', desc: 'Organic floating loop' },
+  { value: 'none',                label: 'No Animation',        icon: 'slash',     desc: 'Static device, pure camera movement' },
+  { value: 'cinematic-reveal',    label: 'Cinematic Reveal',    icon: 'film',      desc: 'Dramatic entrance from below' },
+  { value: 'floating',            label: 'Float & Breathe',     icon: 'wind',      desc: 'Organic floating loop' },
   { value: 'orbit',               label: 'Orbit Rotation',      icon: 'rotate-cw', desc: 'Slow 3D orbit spin' },
-  { value: 'dolly-zoom',          label: 'Dolly Zoom',          icon: 'maximize-2', desc: 'Hitchcock perspective shift' },
-  { value: 'camera-pan',          label: 'Camera Pan',          icon: 'move', desc: 'Horizontal cinematic pan' },
-  { value: 'parallax',            label: 'Parallax Drift',      icon: 'sparkles', desc: 'Multi-layer depth drift' },
-  { value: 'perspective-reveal',  label: 'Perspective Reveal',  icon: 'box', desc: 'Unfold from flat to 3D' },
-  { value: 'startup-launch',      label: 'Startup Launch',      icon: 'rocket', desc: 'Glow + float entrance' },
-  { value: 'focus-blur',          label: 'Focus Blur',          icon: 'eye', desc: 'Rack focus cinema effect' },
-  { value: 'bounce',              label: 'Soft Bounce',         icon: 'zap', desc: 'Spring bounce entrance' },
+  { value: 'dolly-zoom',          label: 'Dolly Zoom',          icon: 'maximize-2',desc: 'Hitchcock perspective shift' },
+  { value: 'camera-pan',          label: 'Camera Pan',          icon: 'move',      desc: 'Horizontal cinematic pan' },
+  { value: 'parallax',            label: 'Parallax Drift',      icon: 'sparkles',  desc: 'Multi-layer depth drift' },
+  { value: 'perspective-reveal',  label: 'Perspective Reveal',  icon: 'box',       desc: 'Unfold from flat to 3D' },
+  { value: 'startup-launch',      label: 'Startup Launch',      icon: 'rocket',    desc: 'Glow + float entrance' },
+  { value: 'focus-blur',          label: 'Focus Blur',          icon: 'eye',       desc: 'Rack focus cinema effect' },
+  { value: 'bounce',              label: 'Soft Bounce',         icon: 'zap',       desc: 'Spring bounce entrance' },
+  { value: 'scroll-reveal',       label: 'Screen Scroll',       icon: 'scroll',    desc: 'Vertical scroll through long screenshot' },
 ];
 
 export const DEFAULT_SCENES: SceneScene[] = [
-  { id: 's1', name: 'Intro',   duration: 3, animation: 'cinematic-reveal',   easing: 'spring',      camera: { ...DEFAULT_CAMERA }, color: '#7c3aed' },
-  { id: 's2', name: 'Feature', duration: 4, animation: 'floating',           easing: 'ease-in-out', camera: { ...DEFAULT_CAMERA, zoom: 1.1, panY: -30 }, color: '#0ea5e9' },
-  { id: 's3', name: 'Reveal',  duration: 3, animation: 'perspective-reveal', easing: 'ease-out',    camera: { ...DEFAULT_CAMERA, tiltX: 10, zoom: 0.9 }, color: '#10b981' },
+  { id: 's1', name: 'Intro',   duration: 3, animation: 'cinematic-reveal',   easing: 'spring',      camera: { ...DEFAULT_CAMERA }, color: '#7c3aed', cameraSpeed: 1, scrollOffset: 0 },
+  { id: 's2', name: 'Feature', duration: 4, animation: 'floating',           easing: 'ease-in-out', camera: { ...DEFAULT_CAMERA, zoom: 1.1, panY: -30 }, color: '#0ea5e9', cameraSpeed: 1, scrollOffset: 0 },
+  { id: 's3', name: 'Reveal',  duration: 3, animation: 'perspective-reveal', easing: 'ease-out',    camera: { ...DEFAULT_CAMERA, tiltX: 10, zoom: 0.9 }, color: '#10b981', cameraSpeed: 1, scrollOffset: 0 },
 ];
 
 export const DEFAULT_LAYERS: Layer[] = [

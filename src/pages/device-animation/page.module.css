@@ -1282,3 +1282,21 @@
   filter: brightness(1.1);
   box-shadow: 0 6px 16px rgba(168,85,247,0.4);
 }
+
+/* ── Two-column quick-pick grid ── */
+.twoCol {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+
+/* ── Screen Scroll animation (scroll-reveal mode) ── */
+/*
+  Moves the inner container from translateY(0) to translateY(-66.6%)
+  which slides a 300%-tall image from top to bottom inside the device.
+  Uses alternate so it loops back and forth for a continuous preview.
+*/
+@keyframes screenScroll {
+  from { transform: translateY(0%); }
+  to   { transform: translateY(-66.67%); }
+}

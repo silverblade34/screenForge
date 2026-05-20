@@ -171,7 +171,7 @@ function RawFrame({
         {/* Screen */}
         <div className={s.content} style={{ borderRadius: '34px' }}>
           {children}
-          <div className={s.reflection} />
+          <div className={s.reflection} data-export-hide="true" />
         </div>
       </div>
     </div>

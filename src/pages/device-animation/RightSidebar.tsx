@@ -2,7 +2,8 @@
 
 import React from 'react';
 import {
-  Zap, Sliders, Film, Wind, RotateCw, Maximize2, Move, Sparkles, Box, Rocket, Eye, Slash, Activity, Clock, Settings2, Download
+  Zap, Sliders, Film, Wind, RotateCw, Maximize2, Move, Sparkles, Box, Rocket, Eye, Slash,
+  Activity, Clock, Settings2, Download, Gauge, ScrollText,
 } from 'lucide-react';
 import {
   AnimationPreset, EasingType, SceneScene,
@@ -15,6 +16,7 @@ interface Props {
   onAnimationChange: (a: AnimationPreset) => void;
   onEasingChange: (e: EasingType) => void;
   onDurationChange: (d: number) => void;
+  onCameraSpeedChange: (s: number) => void;
 }
 
 const EASINGS: { value: EasingType; label: string }[] = [
@@ -36,18 +38,19 @@ const SCENE_PRESETS: { label: string; desc: string; animation: AnimationPreset; 
 
 const getAnimationIcon = (iconName: string) => {
   switch (iconName) {
-    case 'slash': return <Slash size={12} />;
-    case 'film': return <Film size={12} />;
-    case 'wind': return <Wind size={12} />;
+    case 'slash':      return <Slash size={12} />;
+    case 'film':       return <Film size={12} />;
+    case 'wind':       return <Wind size={12} />;
     case 'rotate-cw': return <RotateCw size={12} />;
     case 'maximize-2': return <Maximize2 size={12} />;
-    case 'move': return <Move size={12} />;
-    case 'sparkles': return <Sparkles size={12} />;
-    case 'box': return <Box size={12} />;
-    case 'rocket': return <Rocket size={12} />;
-    case 'eye': return <Eye size={12} />;
-    case 'zap': return <Zap size={12} />;
-    default: return <Sliders size={12} />;
+    case 'move':       return <Move size={12} />;
+    case 'sparkles':   return <Sparkles size={12} />;
+    case 'box':        return <Box size={12} />;
+    case 'rocket':     return <Rocket size={12} />;
+    case 'eye':        return <Eye size={12} />;
+    case 'zap':        return <Zap size={12} />;
+    case 'scroll':     return <ScrollText size={12} />;
+    default:           return <Sliders size={12} />;
   }
 };
 
@@ -60,7 +63,8 @@ function SectionHeader({ icon, label }: { icon: React.ReactNode; label: string }
   );
 }
 
-export default function RightSidebar({ scene, onAnimationChange, onEasingChange, onDurationChange }: Props) {
+export default function RightSidebar({ scene, onAnimationChange, onEasingChange, onDurationChange, onCameraSpeedChange }: Props) {
+  const speed = scene.cameraSpeed ?? 1;
   return (
     <>
       {/* Scene Presets */}
@@ -142,6 +146,37 @@ export default function RightSidebar({ scene, onAnimationChange, onEasingChange,
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Camera Speed */}
+      <div className={s.inspectorSection}>
+        <SectionHeader icon={<Gauge size={10} />} label="Camera Speed" />
+        <div className={s.sliderRow}>
+          <div className={s.sliderMeta}>
+            <span className={s.sliderName}>Transition Speed</span>
+            <span className={s.sliderVal}>{speed.toFixed(1)}×</span>
+          </div>
+          <input
+            type="range" className={s.slider}
+            min={0.1} max={3} step={0.1}
+            value={speed}
+            onChange={e => onCameraSpeedChange(parseFloat(e.target.value))}
+          />
+        </div>
+        <div className={s.twoCol} style={{ marginTop: 8 }}>
+          {[{ label: 'Slow', v: 0.3 }, { label: 'Normal', v: 1 }, { label: 'Fast', v: 2 }, { label: 'Instant', v: 3 }].map(o => (
+            <button
+              key={o.label}
+              className={`${s.easingBtn} ${Math.abs(speed - o.v) < 0.05 ? s.easingBtnActive : ''}`}
+              onClick={() => onCameraSpeedChange(o.v)}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
+        <p style={{ fontSize: '0.6rem', color: 'var(--text-muted)', marginTop: 6, lineHeight: 1.5 }}>
+          Controls how fast the camera transitions between scenes. Higher = snappier cuts.
+        </p>
       </div>
 
       {/* Motion Quality */}

@@ -98,6 +98,14 @@ function getVariants(animation: AnimationPreset, easing: EasingType) {
         animate: { y: 0, opacity: 1 },
         transition: { type: 'spring', stiffness: 220, damping: 12 } as Transition,
       };
+    case 'scroll-reveal':
+      // The actual scroll motion is handled by CSS animation on the img,
+      // so the entry motion is just a subtle fade-in
+      return {
+        initial: { opacity: 0, scale: 0.97 },
+        animate: { opacity: 1, scale: 1 },
+        transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] } as Transition,
+      };
     default:
       return { initial: {}, animate: {}, transition: {} };
   }
@@ -289,6 +297,8 @@ export default function CinematicStudioPage() {
       easing: 'spring',
       camera: { ...DEFAULT_CAMERA },
       color: colors[scenes.length % colors.length],
+      cameraSpeed: 1,
+      scrollOffset: 0,
     };
     // Seek to the new scene's start so activeSceneId derives correctly
     const newOffset = scenes.reduce((s, sc) => s + sc.duration, 0);
@@ -483,7 +493,8 @@ export default function CinematicStudioPage() {
               style={{
                 transform: cameraTransform,
                 filter: camera.blur > 0 ? `blur(${camera.blur}px)` : undefined,
-                transition: 'transform 0.6s cubic-bezier(0.16,1,0.3,1), filter 0.6s ease',
+                // cameraSpeed multiplies the base 0.6s transition
+                transition: `transform ${(0.6 / (activeScene.cameraSpeed ?? 1)).toFixed(2)}s cubic-bezier(0.16,1,0.3,1), filter 0.6s ease`,
               }}
             >
               {/* Glow Layer */}
@@ -543,8 +554,32 @@ export default function CinematicStudioPage() {
                     >
                       <DeviceFrame model={device} color={frameColor} scale={deviceScale}>
                         {image ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={image} alt="Mockup" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                          activeScene.animation === 'scroll-reveal' ? (
+                            // Long-screenshot: show image taller than screen and animate scroll
+                            <div style={{
+                              width: '100%',
+                              height: '100%',
+                              overflow: 'hidden',
+                              position: 'relative',
+                            }}>
+                              <div
+                                style={{
+                                  width: '100%',
+                                  // image is 3× the frame height to allow scrolling
+                                  height: '300%',
+                                  animation: `screenScroll ${activeScene.duration}s linear infinite alternate`,
+                                }}
+                              >
+                                <img
+                                  src={image}
+                                  alt="Long screenshot"
+                                  style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top', display: 'block' }}
+                                />
+                              </div>
+                            </div>
+                          ) : (
+                            <img src={image} alt="Mockup" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                          )
                         ) : (
                           <div className={s.uploadPlaceholder}>
                             <div className={s.uploadIcon}>
@@ -555,7 +590,12 @@ export default function CinematicStudioPage() {
                               </svg>
                               <span className={s.uploadIconPlus}>+</span>
                             </div>
-                            <span className={s.uploadLabel}>Drop or click to upload</span>
+                            <span className={s.uploadLabel}>
+                              {activeScene.animation === 'scroll-reveal'
+                                ? 'Drop a long screenshot'
+                                : 'Drop or click to upload'
+                              }
+                            </span>
                             <span className={s.uploadSub}>PNG, JPG, WebP</span>
                           </div>
                         )}
@@ -630,6 +670,7 @@ export default function CinematicStudioPage() {
             onAnimationChange={a => { updateScene(activeSceneId, { animation: a }); setAnimKey(k => k + 1); }}
             onEasingChange={e => updateScene(activeSceneId, { easing: e })}
             onDurationChange={d => updateScene(activeSceneId, { duration: d })}
+            onCameraSpeedChange={sp => updateScene(activeSceneId, { cameraSpeed: sp })}
           />
         </div>
       </div>
