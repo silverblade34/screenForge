@@ -146,38 +146,47 @@ export default function CanvasArea({
                     ) : (
                       <div style={{ position: 'relative', width: '100%', height: '100%' }}>
                         <img src={activeScene.image} alt="Mockup" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                        {activeScene.mode === 'flow' && (activeScene.hotspots || []).map((h, i) => (
-                          <div
-                            key={h.id}
-                            onClick={(e) => {
-                              if (isPlaying && h.targetSceneId) {
-                                e.stopPropagation();
-                                handleSceneSeek(h.targetSceneId);
-                              }
-                            }}
-                            style={{
-                              position: 'absolute',
-                              left: `${h.x}%`,
-                              top: `${h.y}%`,
-                              transform: 'translate(-50%, -50%)',
-                              width: 44,
-                              height: 44,
-                              borderRadius: '50%',
-                              background: isPlaying ? 'transparent' : 'rgba(168, 85, 247, 0.4)',
-                              border: isPlaying ? 'none' : '2px dashed #a855f7',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              color: 'white',
-                              fontSize: '0.6rem',
-                              fontWeight: 'bold',
-                              cursor: isPlaying && h.targetSceneId ? 'pointer' : 'crosshair',
-                              zIndex: 10
-                            }}
-                          >
-                            {!isPlaying && (i + 1)}
-                          </div>
-                        ))}
+                        {activeScene.hotspots?.map((h, i) => {
+                          // Determine shape class
+                          let shapeClass = s.hotspotShapeCircle;
+                          if (h.shape === 'pill') shapeClass = s.hotspotShapePill;
+                          else if (h.shape === 'invisible') shapeClass = s.hotspotShapeInvisible;
+
+                          // Determine animation class
+                          let animClass = '';
+                          if (isPlaying && h.animationPreset) {
+                            if (h.animationPreset === 'pulse') animClass = s.hotspotPulse;
+                            else if (h.animationPreset === 'glow') animClass = s.hotspotGlow;
+                            else if (h.animationPreset === 'float') animClass = s.hotspotFloat;
+                            else if (h.animationPreset === 'fade') animClass = s.hotspotFade;
+                            else if (h.animationPreset === 'ripple') animClass = s.hotspotRipple;
+                          }
+
+                          return (
+                            <div
+                              key={h.id}
+                              className={`${s.hotspot} ${shapeClass} ${animClass} ${!isPlaying ? s.hotspotEditMode : ''}`}
+                              onClick={(e) => {
+                                if (isPlaying && h.targetSceneId) {
+                                  e.stopPropagation();
+                                  handleSceneSeek(h.targetSceneId);
+                                }
+                              }}
+                              style={{
+                                left: `${h.x}%`,
+                                top: `${h.y}%`,
+                                width: h.shape === 'pill' ? 'auto' : `${h.width}%`,
+                                height: `${h.height}%`,
+                                minHeight: '44px',
+                                opacity: h.opacity !== undefined ? h.opacity / 100 : 1,
+                                cursor: isPlaying && h.targetSceneId ? 'pointer' : 'crosshair',
+                              }}
+                            >
+                              {!isPlaying && !h.label && (i + 1)}
+                              {h.label && <span className={s.hotspotLabel}>{h.label}</span>}
+                            </div>
+                          );
+                        })}
                       </div>
                     )
                   ) : (

@@ -36,8 +36,13 @@ export interface FlowHotspot {
   id: string;
   x: number;          // % from left of screen (0–100)
   y: number;          // % from top  of screen (0–100)
+  width: number;
+  height: number;
   label: string;
+  shape: 'circle' | 'pill' | 'invisible';
   targetSceneId: string;
+  animationPreset: 'pulse' | 'glow' | 'float' | 'fade' | 'ripple' | 'none';
+  opacity: number;
 }
 
 export interface Layer {

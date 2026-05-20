@@ -4,7 +4,7 @@ import React from 'react';
 import {
   Zap, Sliders, Film, Wind, Maximize2, Move, Sparkles, Eye, Slash,
   Activity, Clock, Settings2, Download, Gauge, ScrollText, PlayCircle, PlusCircle, Network,
-  Layers, ZoomIn,
+  Layers, ZoomIn, Trash2,
 } from 'lucide-react';
 import {
   AnimationPreset, EasingType, SceneScene, SceneMode,
@@ -21,41 +21,43 @@ interface Props {
   onDurationChange: (d: number) => void;
   onCameraSpeedChange: (s: number) => void;
   onScrollSpeedChange: (s: number) => void;
-  onHotspotUpdate: (id: string, targetSceneId: string) => void;
+  onHotspotUpdate: (id: string, updates: Partial<import('./types').FlowHotspot>) => void;
   onHotspotDelete: (id: string) => void;
+  onSceneRename: (name: string) => void;
+  onSceneDelete: () => void;
 }
 
 const EASINGS: { value: EasingType; label: string }[] = [
-  { value: 'spring',     label: 'Spring' },
-  { value: 'ease-out',   label: 'Ease Out' },
-  { value: 'ease-in-out',label: 'Ease In-Out' },
-  { value: 'linear',     label: 'Linear' },
+  { value: 'spring', label: 'Spring' },
+  { value: 'ease-out', label: 'Ease Out' },
+  { value: 'ease-in-out', label: 'Ease In-Out' },
+  { value: 'linear', label: 'Linear' },
   { value: 'anticipate', label: 'Anticipate' },
-  { value: 'bounce',     label: 'Bounce' },
+  { value: 'bounce', label: 'Bounce' },
 ];
 
 const SCENE_PRESETS: { label: string; desc: string; animation: AnimationPreset; easing: EasingType }[] = [
-  { label: 'App Showcase',    desc: 'Floating drift loop',           animation: 'floating-drift',  easing: 'ease-in-out' },
-  { label: 'Hero Launch',     desc: 'Fade + scale entrance',         animation: 'hero-reveal',     easing: 'ease-out' },
-  { label: 'Feature Focus',   desc: 'Rack-focus lens pull',          animation: 'focus-pull',      easing: 'ease-out' },
-  { label: 'Dashboard Demo',  desc: 'Camera slide + stable device',  animation: 'camera-slide',    easing: 'ease-out' },
-  { label: 'Detail Zoom',     desc: 'Precision zoom for showcases',  animation: 'precision-zoom',  easing: 'spring'   },
+  { label: 'App Showcase', desc: 'Floating drift loop', animation: 'floating-drift', easing: 'ease-in-out' },
+  { label: 'Hero Launch', desc: 'Fade + scale entrance', animation: 'hero-reveal', easing: 'ease-out' },
+  { label: 'Feature Focus', desc: 'Rack-focus lens pull', animation: 'focus-pull', easing: 'ease-out' },
+  { label: 'Dashboard Demo', desc: 'Camera slide + stable device', animation: 'camera-slide', easing: 'ease-out' },
+  { label: 'Detail Zoom', desc: 'Precision zoom for showcases', animation: 'precision-zoom', easing: 'spring' },
 ];
 
 const getAnimationIcon = (iconName: string) => {
   switch (iconName) {
-    case 'slash':      return <Slash size={12} />;
-    case 'film':       return <Film size={12} />;
-    case 'wind':       return <Wind size={12} />;
+    case 'slash': return <Slash size={12} />;
+    case 'film': return <Film size={12} />;
+    case 'wind': return <Wind size={12} />;
     case 'maximize-2': return <Maximize2 size={12} />;
-    case 'move':       return <Move size={12} />;
-    case 'sparkles':   return <Sparkles size={12} />;
-    case 'eye':        return <Eye size={12} />;
-    case 'zap':        return <Zap size={12} />;
-    case 'scroll':     return <ScrollText size={12} />;
-    case 'layers':     return <Layers size={12} />;
-    case 'zoom-in':    return <ZoomIn size={12} />;
-    default:           return <Sliders size={12} />;
+    case 'move': return <Move size={12} />;
+    case 'sparkles': return <Sparkles size={12} />;
+    case 'eye': return <Eye size={12} />;
+    case 'zap': return <Zap size={12} />;
+    case 'scroll': return <ScrollText size={12} />;
+    case 'layers': return <Layers size={12} />;
+    case 'zoom-in': return <ZoomIn size={12} />;
+    default: return <Sliders size={12} />;
   }
 };
 
@@ -68,21 +70,53 @@ function SectionHeader({ icon, label }: { icon: React.ReactNode; label: string }
   );
 }
 
-export default function RightSidebar({ 
-  scene, scenes, onModeChange, onAnimationChange, onEasingChange, 
-  onDurationChange, onCameraSpeedChange, onScrollSpeedChange, 
-  onHotspotUpdate, onHotspotDelete 
+export default function RightSidebar({
+  scene, scenes, onModeChange, onAnimationChange, onEasingChange,
+  onDurationChange, onCameraSpeedChange, onScrollSpeedChange,
+  onHotspotUpdate, onHotspotDelete, onSceneRename, onSceneDelete
 }: Props) {
   const speed = scene.cameraSpeed ?? 1;
   const mode = scene.mode || 'animation';
 
   return (
     <>
+      {/* Scene Identity */}
+      <div className={s.inspectorSection} style={{ paddingBottom: 16, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <input
+            type="text"
+            className={s.numberInput}
+            style={{ flex: 1, padding: '6px 8px', fontSize: '0.7rem', fontWeight: 600 }}
+            value={scene.name}
+            onChange={e => onSceneRename(e.target.value)}
+            placeholder="Scene Name"
+          />
+          <button
+            onClick={onSceneDelete}
+            style={{ 
+              background: 'rgba(239, 68, 68, 0.1)', 
+              color: '#ef4444', 
+              border: '1px solid rgba(239, 68, 68, 0.2)', 
+              padding: '6px', 
+              borderRadius: '6px', 
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0
+            }}
+            title="Delete Scene"
+          >
+            <Trash2 size={14} />
+          </button>
+        </div>
+      </div>
+
       {/* Scene Mode Selector */}
       <div className={s.inspectorSection}>
         <SectionHeader icon={<Settings2 size={10} />} label="Scene Mode" />
-        <div className={s.modeGrid} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 4, marginBottom: 12 }}>
-          <button 
+        <div className={s.modeGrid} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginBottom: 12 }}>
+          <button
             className={`${s.easingBtn} ${mode === 'animation' ? s.easingBtnActive : ''}`}
             onClick={() => onModeChange('animation')}
             title="Classic 3D animation"
@@ -91,7 +125,7 @@ export default function RightSidebar({
             <Film size={12} style={{ margin: '0 auto 4px auto', display: 'block' }} />
             Animation
           </button>
-          <button 
+          <button
             className={`${s.easingBtn} ${mode === 'scroll' ? s.easingBtnActive : ''}`}
             onClick={() => onModeChange('scroll')}
             title="Auto-scroll long screenshot"
@@ -100,7 +134,7 @@ export default function RightSidebar({
             <ScrollText size={12} style={{ margin: '0 auto 4px auto', display: 'block' }} />
             Scroll
           </button>
-          <button 
+          {/* <button
             className={`${s.easingBtn} ${mode === 'flow' ? s.easingBtnActive : ''}`}
             onClick={() => onModeChange('flow')}
             title="Interactive prototype flow"
@@ -108,7 +142,7 @@ export default function RightSidebar({
           >
             <Network size={12} style={{ margin: '0 auto 4px auto', display: 'block' }} />
             Flow
-          </button>
+          </button> */}
         </div>
         <p style={{ fontSize: '0.6rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
           {mode === 'animation' && 'Cinematic camera-first motion — elegant, Apple-inspired movement.'}
@@ -202,7 +236,7 @@ export default function RightSidebar({
           {(scene.hotspots || []).length === 0 ? (
             <div style={{ textAlign: 'center', padding: '20px 10px', background: 'rgba(255,255,255,0.02)', borderRadius: 8, border: '1px dashed rgba(255,255,255,0.1)' }}>
               <PlusCircle size={16} style={{ color: '#a1a1aa', margin: '0 auto 8px auto' }} />
-              <p style={{ fontSize: '0.65rem', color: '#71717a' }}>Click on the device screen to add a hotspot.</p>
+              <p style={{ fontSize: '0.65rem', color: '#71717a' }}>Click anywhere on the device screen to add a cinematic hotspot.</p>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -212,20 +246,86 @@ export default function RightSidebar({
                     <span style={{ fontSize: '0.65rem', fontWeight: 600, color: '#e4e4e7' }}>Hotspot {i + 1}</span>
                     <button onClick={() => onHotspotDelete(h.id)} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '0.6rem', cursor: 'pointer' }}>Delete</button>
                   </div>
-                  <div className={s.inputRow} style={{ margin: 0 }}>
+
+                  {/* Target Scene */}
+                  <div className={s.inputRow} style={{ margin: '4px 0' }}>
                     <label className={s.inputLabel}>Navigate to</label>
-                    <select 
-                      className={s.numberInput} 
+                    <select
+                      className={s.numberInput}
                       style={{ width: '100%', padding: '4px 6px', marginTop: 4 }}
-                      value={h.targetSceneId}
-                      onChange={e => onHotspotUpdate(h.id, e.target.value)}
+                      value={h.targetSceneId || ''}
+                      onChange={e => onHotspotUpdate(h.id, { targetSceneId: e.target.value })}
                     >
-                      <option value="">Select a scene...</option>
+                      <option value="">Select target scene...</option>
                       {scenes.filter(s => s.id !== scene.id).map(s => (
                         <option key={s.id} value={s.id}>{s.name}</option>
                       ))}
                     </select>
                   </div>
+
+                  {/* Label */}
+                  <div className={s.inputRow} style={{ margin: '4px 0' }}>
+                    <label className={s.inputLabel}>Label (Optional)</label>
+                    <input
+                      type="text"
+                      className={s.numberInput}
+                      style={{ width: '100%', padding: '4px 6px', marginTop: 4, textAlign: 'left' }}
+                      value={h.label || ''}
+                      placeholder="e.g. Explore Feature"
+                      onChange={e => onHotspotUpdate(h.id, { label: e.target.value })}
+                    />
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 4 }}>
+                    {/* Shape */}
+                    <div className={s.inputRow} style={{ margin: 0 }}>
+                      <label className={s.inputLabel}>Shape</label>
+                      <select
+                        className={s.numberInput}
+                        style={{ width: '100%', padding: '4px 6px', marginTop: 4 }}
+                        value={h.shape || 'circle'}
+                        onChange={e => onHotspotUpdate(h.id, { shape: e.target.value as any })}
+                      >
+                        <option value="circle">Circle</option>
+                        <option value="pill">Pill</option>
+                        <option value="invisible">Invisible</option>
+                      </select>
+                    </div>
+
+                    {/* Animation */}
+                    <div className={s.inputRow} style={{ margin: 0 }}>
+                      <label className={s.inputLabel}>Animation</label>
+                      <select
+                        className={s.numberInput}
+                        style={{ width: '100%', padding: '4px 6px', marginTop: 4 }}
+                        value={h.animationPreset || 'pulse'}
+                        onChange={e => onHotspotUpdate(h.id, { animationPreset: e.target.value as any })}
+                      >
+                        <option value="none">None</option>
+                        <option value="pulse">Pulse</option>
+                        <option value="glow">Glow</option>
+                        <option value="float">Float</option>
+                        <option value="fade">Fade</option>
+                        <option value="ripple">Ripple</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Opacity */}
+                  <div className={s.inputRow} style={{ margin: '8px 0 0 0' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                      <label className={s.inputLabel}>Opacity</label>
+                      <span className={s.inputLabel}>{h.opacity !== undefined ? h.opacity : 100}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      className={s.slider}
+                      min={0} max={100}
+                      value={h.opacity !== undefined ? h.opacity : 100}
+                      onChange={e => onHotspotUpdate(h.id, { opacity: parseInt(e.target.value) })}
+                    />
+                  </div>
+
                 </div>
               ))}
             </div>
@@ -247,7 +347,7 @@ export default function RightSidebar({
           />
         </div>
         <div className={s.twoCol} style={{ marginTop: 8 }}>
-          {[1,2,3,4,5,6].map(d => (
+          {[1, 2, 3, 4, 5, 6].map(d => (
             <button
               key={d}
               className={`${s.easingBtn} ${scene.duration === d ? s.easingBtnActive : ''}`}

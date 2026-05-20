@@ -11,7 +11,7 @@ import { ALL_TOOLS } from '@/components/layout/Navbar';
 import type { Transition } from 'framer-motion';
 import {
   SceneScene, CameraState, Layer, BackgroundOption, AnimationPreset, EasingType,
-  DeviceModel, FrameColor,
+  DeviceModel, FrameColor, FlowHotspot,
   DEFAULT_SCENES, DEFAULT_LAYERS, DEFAULT_CAMERA, BACKGROUNDS,
 } from './types';
 
@@ -411,11 +411,16 @@ export default function CinematicStudioPage() {
       const x = ((e.clientX - rect.left) / rect.width) * 100;
       const y = ((e.clientY - rect.top) / rect.height) * 100;
       
-      const newHotspot = {
+      const newHotspot: FlowHotspot = {
         id: `h${Date.now()}`,
         x, y,
+        width: 14, // roughly 44px on a mobile frame
+        height: 14,
         label: `Link`,
-        targetSceneId: ''
+        shape: 'circle',
+        targetSceneId: '',
+        animationPreset: 'pulse',
+        opacity: 100
       };
       updateScene(activeSceneId, { 
         hotspots: [...(activeScene.hotspots || []), newHotspot] 
@@ -638,13 +643,27 @@ export default function CinematicStudioPage() {
             onDurationChange={d => updateScene(activeSceneId, { duration: d })}
             onCameraSpeedChange={sp => updateScene(activeSceneId, { cameraSpeed: sp })}
             onScrollSpeedChange={sp => updateScene(activeSceneId, { scrollSpeed: sp })}
-            onHotspotUpdate={(id, targetId) => {
-              const hs = activeScene.hotspots.map(h => h.id === id ? { ...h, targetSceneId: targetId } : h);
-              updateScene(activeSceneId, { hotspots: hs });
+            onHotspotUpdate={(hId, updates) => {
+              const hotspots = activeScene.hotspots || [];
+              updateScene(activeSceneId, {
+                hotspots: hotspots.map(h => h.id === hId ? { ...h, ...updates } : h)
+              });
             }}
             onHotspotDelete={id => {
               const hs = activeScene.hotspots.filter(h => h.id !== id);
               updateScene(activeSceneId, { hotspots: hs });
+            }}
+            onSceneRename={name => updateScene(activeSceneId, { name })}
+            onSceneDelete={() => {
+              if (scenes.length <= 1) {
+                addToast('Cannot delete the last scene', 'error');
+                return;
+              }
+              const newScenes = scenes.filter(s => s.id !== activeSceneId);
+              setScenes(newScenes);
+              // reset time to 0 to be safe
+              setCurrentTime(0);
+              setAnimKey(k => k + 1);
             }}
           />
         </div>
