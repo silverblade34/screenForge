@@ -2,7 +2,7 @@ import React, { useRef } from 'react';
 import { motion, AnimatePresence, Transition } from 'framer-motion';
 import { Plus } from 'lucide-react';
 import { DeviceFrame } from '@/components/mockup/DeviceFrame';
-import { SceneScene, DeviceModel, FrameColor, BackgroundOption, AnimationPreset, EasingType, Layer, CameraState } from './types';
+import { SceneScene, DeviceModel, FrameColor, BackgroundOption, AnimationPreset, EasingType, Layer, CameraState, TextLayer } from './types';
 import s from './page.module.css';
 
 interface CanvasAreaProps {
@@ -24,6 +24,22 @@ interface CanvasAreaProps {
   addScene: () => void;
   getVariants: (animation: AnimationPreset, easing: EasingType) => any;
   animKey: number;
+
+  // Text Layers props
+  textLayers?: TextLayer[];
+  activeTextLayerId?: string | null;
+  editingTextLayerId?: string | null;
+  setActiveTextLayerId?: (id: string | null) => void;
+  setEditingTextLayerId?: (id: string | null) => void;
+  updateTextLayer?: (id: string, updates: Partial<TextLayer>) => void;
+  draggingLayerRef?: React.MutableRefObject<string | null>;
+  dragStartRef?: React.MutableRefObject<{ mx: number; my: number; sx: number; sy: number } | null>;
+  resizeLayerRef?: React.MutableRefObject<string | null>;
+  resizeStartRef?: React.MutableRefObject<{ mx: number; w: number } | null>;
+  isExporting?: boolean;
+  handleTextLayerPointerDown?: (e: React.PointerEvent, id: string) => void;
+  handleTextLayerPointerMove?: (e: React.PointerEvent) => void;
+  handleTextLayerPointerUp?: (e: React.PointerEvent) => void;
 }
 
 export default function CanvasArea({
@@ -44,7 +60,21 @@ export default function CanvasArea({
   handlePlayPause,
   addScene,
   getVariants,
-  animKey
+  animKey,
+  textLayers = [],
+  activeTextLayerId,
+  editingTextLayerId,
+  setActiveTextLayerId,
+  setEditingTextLayerId,
+  updateTextLayer,
+  draggingLayerRef,
+  dragStartRef,
+  resizeLayerRef,
+  resizeStartRef,
+  isExporting,
+  handleTextLayerPointerDown,
+  handleTextLayerPointerMove,
+  handleTextLayerPointerUp,
 }: CanvasAreaProps) {
   // Compute layers
   const glowLayer = layers.find(l => l.id === 'glow');
@@ -229,6 +259,102 @@ export default function CanvasArea({
           </AnimatePresence>
         </div>
       </div>
+
+      {/* Text Layers */}
+      {textLayers.map(layer => {
+        if (layer.hidden) return null;
+        // Text layers render relative to viewport size. We use percentages directly for simplicity
+        const isGradient = layer.gradient;
+        const gradFrom = layer.gradientFrom ?? '#a855f7';
+        const gradTo = layer.gradientTo ?? '#6366f1';
+        
+        return (
+          <div
+            key={layer.id}
+            className={`${s.canvasTextLayer} ${activeTextLayerId === layer.id && !isExporting ? s.canvasTextLayerActive : ''}`}
+            onDoubleClick={() => setEditingTextLayerId && setEditingTextLayerId(layer.id)}
+            onPointerDown={e => handleTextLayerPointerDown && handleTextLayerPointerDown(e, layer.id)}
+            onPointerMove={handleTextLayerPointerMove}
+            onPointerUp={handleTextLayerPointerUp}
+            onPointerCancel={handleTextLayerPointerUp}
+            style={{
+              position: 'absolute',
+              left: `${layer.x}%`,
+              top: `${layer.y}%`,
+              transform: `translate(-50%, -50%) rotate(${layer.rotation ?? 0}deg)`,
+              maxWidth: layer.width ?? 700,
+              width: layer.width ?? 700,
+              textAlign: layer.align,
+              fontFamily: layer.fontFamily,
+              fontSize: layer.fontSize,
+              fontWeight: layer.fontWeight,
+              opacity: (layer.opacity ?? 1),
+              letterSpacing: layer.letterSpacing,
+              lineHeight: layer.lineHeight,
+              color: isGradient ? 'transparent' : layer.color,
+              backgroundImage: isGradient ? `linear-gradient(135deg, ${gradFrom}, ${gradTo})` : 'none',
+              WebkitBackgroundClip: isGradient ? 'text' : 'border-box',
+              WebkitTextFillColor: isGradient ? 'transparent' : 'inherit',
+              backgroundClip: isGradient ? 'text' : 'border-box',
+              textShadow: [
+                layer.glow > 0 ? `0 0 ${layer.glow}px ${layer.color}` : '',
+                layer.shadow ? '0 4px 24px rgba(0,0,0,0.5)' : '',
+              ].filter(Boolean).join(', ') || 'none',
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word',
+              pointerEvents: isExporting ? 'none' : 'auto',
+              display: isExporting && layer.hidden ? 'none' : 'block',
+              zIndex: layer.zIndex,
+              transition: draggingLayerRef?.current === layer.id ? 'none' : 'transform 0.2s cubic-bezier(0.4,0,0.2,1)',
+            }}
+          >
+            <div
+              key={editingTextLayerId === layer.id ? 'edit' : 'view'}
+              contentEditable={editingTextLayerId === layer.id}
+              suppressContentEditableWarning={true}
+              onInput={e => updateTextLayer && updateTextLayer(layer.id, { text: (e.target as HTMLElement).innerText })}
+              onBlur={() => setEditingTextLayerId && setEditingTextLayerId(null)}
+              style={{ outline: 'none', width: '100%', height: '100%' }}
+            >
+              {layer.text}
+            </div>
+            {activeTextLayerId === layer.id && !isExporting && (
+              <>
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: -6,
+                    left: -6,
+                    width: 12,
+                    height: 12,
+                    background: '#a855f7',
+                    cursor: 'nwse-resize',
+                  }}
+                  onPointerDown={e => {
+                    e.stopPropagation();
+                    if (resizeLayerRef) resizeLayerRef.current = layer.id;
+                    if (resizeStartRef) resizeStartRef.current = { mx: e.clientX, w: layer.width ?? 700 };
+                    e.currentTarget.setPointerCapture(e.pointerId);
+                  }}
+                  onPointerMove={e => {
+                    if (resizeLayerRef?.current !== layer.id || !resizeStartRef?.current) return;
+                    const dx = e.clientX - resizeStartRef.current.mx;
+                    const newW = Math.max(100, resizeStartRef.current.w + dx);
+                    if (updateTextLayer) updateTextLayer(layer.id, { width: newW });
+                  }}
+                  onPointerUp={e => {
+                    if (resizeLayerRef?.current === layer.id) {
+                      e.currentTarget.releasePointerCapture(e.pointerId);
+                      if (resizeLayerRef) resizeLayerRef.current = null;
+                      if (resizeStartRef) resizeStartRef.current = null;
+                    }
+                  }}
+                />
+              </>
+            )}
+          </div>
+        );
+      })}
 
       {/* Canvas Overlay */}
       <div className={s.canvasOverlay}>

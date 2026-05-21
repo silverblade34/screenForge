@@ -144,3 +144,57 @@ export const DEFAULT_LAYERS: Layer[] = [
   { id: 'shadow',     name: 'Shadow',     visible: true, opacity: 60,  color: '#6366f1', locked: false },
   { id: 'background', name: 'Background', visible: true, opacity: 100, color: '#0ea5e9', locked: true  },
 ];
+
+export interface TextLayer {
+  id: string;
+  type: 'title' | 'subtitle' | 'caption' | 'badge';
+  text: string;
+
+  x: number;
+  y: number;
+  width?: number;
+  height?: number;
+  rotation?: number;
+
+  fontFamily: string;
+  fontPreset: string;
+
+  fontSize: number;
+  fontWeight: number;
+  lineHeight: number;
+  letterSpacing: number;
+
+  color: string;
+  opacity: number;
+  align: 'left' | 'center' | 'right';
+
+  glow: number;
+  blur?: number;
+
+  gradient?: boolean;
+  gradientFrom?: string;
+  gradientTo?: string;
+
+  shadow?: boolean;
+  locked?: boolean;
+  hidden?: boolean;
+  zIndex: number;
+}
+
+export const FONT_PRESETS = [
+  { id: 'modern', label: 'Modern', font: 'Inter, sans-serif', preview: 'Aa' },
+  { id: 'cinematic', label: 'Cinematic', font: '"Bebas Neue", sans-serif', preview: 'Aa' },
+  { id: 'luxury', label: 'Luxury', font: '"Cormorant Garamond", serif', preview: 'Aa' },
+  { id: 'apple', label: 'Apple', font: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif', preview: 'Aa' },
+  { id: 'editorial', label: 'Editorial', font: '"General Sans", Georgia, serif', preview: 'Aa' },
+  { id: 'mono', label: 'Mono', font: '"JetBrains Mono", ui-monospace, monospace', preview: 'Aa' },
+];
+
+export const TEXT_BLOCKS: { id: string; label: string; text: string; type: TextLayer['type']; fontSize: number; fontWeight: number; letterSpacing: number; lineHeight: number; color: string; gradient?: boolean }[] = [
+  { id: 'hero', label: 'Hero Title', text: 'The Future of\nProduct Design', type: 'title', fontSize: 64, fontWeight: 800, letterSpacing: -2, lineHeight: 1.0, color: '#ffffff', gradient: false },
+  { id: 'launch', label: 'Launch', text: 'Introducing ScreenForge 2.0', type: 'title', fontSize: 42, fontWeight: 700, letterSpacing: -1.5, lineHeight: 1.05, color: '#ffffff', gradient: true },
+  { id: 'feature', label: 'Feature', text: 'Powerful timeline editor', type: 'subtitle', fontSize: 28, fontWeight: 600, letterSpacing: -0.5, lineHeight: 1.2, color: '#e4e4e7', gradient: false },
+  { id: 'subtitle', label: 'Subtitle', text: 'Built for modern product teams', type: 'subtitle', fontSize: 22, fontWeight: 400, letterSpacing: 0, lineHeight: 1.4, color: '#a1a1aa', gradient: false },
+  { id: 'cta', label: 'CTA', text: 'Start for free →', type: 'badge', fontSize: 14, fontWeight: 700, letterSpacing: 0.5, lineHeight: 1.4, color: '#c084fc', gradient: false },
+  { id: 'caption', label: 'Caption', text: 'Available on iOS & Android', type: 'caption', fontSize: 13, fontWeight: 400, letterSpacing: 0.3, lineHeight: 1.6, color: '#71717a', gradient: false },
+];

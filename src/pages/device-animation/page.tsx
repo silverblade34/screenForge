@@ -11,7 +11,7 @@ import { ALL_TOOLS } from '@/components/layout/Navbar';
 import type { Transition } from 'framer-motion';
 import {
   SceneScene, CameraState, Layer, BackgroundOption, AnimationPreset, EasingType,
-  DeviceModel, FrameColor, FlowHotspot,
+  DeviceModel, FrameColor, FlowHotspot, TextLayer, TEXT_BLOCKS, FONT_PRESETS,
   DEFAULT_SCENES, DEFAULT_LAYERS, DEFAULT_CAMERA, BACKGROUNDS,
 } from './types';
 
@@ -268,6 +268,81 @@ export default function CinematicStudioPage() {
   const [layers, setLayers] = usePersistedState<Layer[]>('screenforge_anim_layers', DEFAULT_LAYERS);
   const [activeLayer, setActiveLayer] = useState('device');
 
+  // Text Layers
+  const [textLayers, setTextLayers] = usePersistedState<TextLayer[]>('screenforge_anim_texts', []);
+  const [activeTextLayerId, setActiveTextLayerId] = useState<string | null>(null);
+  const [editingTextLayerId, setEditingTextLayerId] = useState<string | null>(null);
+  const [showTextBlockMenu, setShowTextBlockMenu] = useState(false);
+  const textMenuContainerRef = useRef<HTMLDivElement>(null);
+
+  const draggingLayerRef = useRef<string | null>(null);
+  const dragStartRef = useRef<{ mx: number; my: number; sx: number; sy: number } | null>(null);
+  const resizeLayerRef = useRef<string | null>(null);
+  const resizeStartRef = useRef<{ mx: number; w: number } | null>(null);
+
+  const handleTextLayerPointerDown = (e: React.PointerEvent, id: string) => {
+    if (isExporting) return;
+    e.stopPropagation();
+    setActiveTextLayerId(id);
+    e.currentTarget.setPointerCapture(e.pointerId);
+    draggingLayerRef.current = id;
+    const layer = textLayers.find(l => l.id === id);
+    if (!layer) return;
+    dragStartRef.current = { mx: e.clientX, my: e.clientY, sx: layer.x, sy: layer.y };
+  };
+
+  const handleTextLayerPointerMove = (e: React.PointerEvent) => {
+    if (!draggingLayerRef.current || !dragStartRef.current) return;
+    const dx = (e.clientX - dragStartRef.current.mx) / window.innerWidth * 100;
+    const dy = (e.clientY - dragStartRef.current.my) / window.innerHeight * 100;
+    let newX = dragStartRef.current.sx + dx;
+    let newY = dragStartRef.current.sy + dy;
+    updateTextLayer(draggingLayerRef.current, { x: newX, y: newY });
+  };
+
+  const handleTextLayerPointerUp = (e: React.PointerEvent) => {
+    if (draggingLayerRef.current) {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+      draggingLayerRef.current = null;
+      dragStartRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (textMenuContainerRef.current && !textMenuContainerRef.current.contains(event.target as Node)) {
+        setShowTextBlockMenu(false);
+      }
+    }
+    if (showTextBlockMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showTextBlockMenu]);
+
+  const addTextBlock = (block: typeof TEXT_BLOCKS[0]) => {
+    const id = `text-${Date.now()}`;
+    const newLayer: TextLayer = {
+      id, type: block.type, text: block.text,
+      x: 50, y: 50, width: 700, align: 'center',
+      fontFamily: FONT_PRESETS[0].font, fontPreset: 'modern',
+      fontSize: block.fontSize, fontWeight: block.fontWeight,
+      letterSpacing: block.letterSpacing, lineHeight: block.lineHeight,
+      color: block.color, opacity: 1, glow: 0,
+      gradient: block.gradient ?? false, gradientFrom: '#a855f7', gradientTo: '#6366f1',
+      shadow: false, zIndex: textLayers.length + 10,
+    };
+    setTextLayers(prev => [...prev, newLayer]);
+    setActiveTextLayerId(id);
+    setShowTextBlockMenu(false);
+  };
+
+  const updateTextLayer = (id: string, updates: Partial<TextLayer>) => {
+    setTextLayers(prev => prev.map(l => l.id === id ? { ...l, ...updates } : l));
+  };
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Playback
@@ -276,6 +351,11 @@ export default function CinematicStudioPage() {
   const [animKey, setAnimKey] = useState(0);
   const rafRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number>(0);
+
+  // Video Export
+  const [isExporting, setIsExporting] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<BlobPart[]>([]);
 
   const totalDuration = useMemo(
     () => scenes.reduce((sum, sc) => sum + sc.duration, 0),
@@ -317,6 +397,15 @@ export default function CinematicStudioPage() {
     }
     return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
   }, [isPlaying, totalDuration]);
+
+  // Handle Export Completion
+  useEffect(() => {
+    if (isExporting && !isPlaying && currentTime >= totalDuration) {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+        mediaRecorderRef.current.stop();
+      }
+    }
+  }, [isPlaying, currentTime, isExporting, totalDuration]);
 
   // No effect needed — activeSceneId is derived from currentTime above
 
@@ -365,6 +454,57 @@ export default function CinematicStudioPage() {
         setScenes(prev => prev.map(sc => sc.id === activeScene.id ? { ...sc, image: dataUrl } : sc));
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleExportVideo = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getDisplayMedia({
+        video: { displaySurface: 'browser' },
+        audio: false,
+        preferCurrentTab: true,
+      } as any);
+
+      const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
+        ? 'video/webm;codecs=vp9'
+        : 'video/webm';
+      
+      const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8000000 });
+      chunksRef.current = [];
+
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) chunksRef.current.push(e.data);
+      };
+
+      recorder.onstop = () => {
+        const blob = new Blob(chunksRef.current, { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'screenforge-animation.webm';
+        a.click();
+        URL.revokeObjectURL(url);
+        setIsExporting(false);
+        addToast('Video exported successfully!', 'success');
+        stream.getTracks().forEach(t => t.stop());
+      };
+
+      mediaRecorderRef.current = recorder;
+      setIsExporting(true);
+      setCurrentTime(0);
+      setIsPlaying(false);
+      setAnimKey(k => k + 1);
+
+      // Give React time to render time=0
+      setTimeout(() => {
+        recorder.start(100);
+        setIsPlaying(true);
+      }, 800);
+
+    } catch (err) {
+      console.error(err);
+      setIsExporting(false);
+      addToast('Export cancelled or failed', 'error');
     }
   };
 
@@ -536,6 +676,51 @@ export default function CinematicStudioPage() {
             ))}
             <button className={s.addSceneBtn} onClick={addScene} title="Add scene">+</button>
           </div>
+
+          <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.1)', margin: '0 8px' }} />
+
+          {/* Add Text Menu */}
+          <div style={{ position: 'relative' }} ref={textMenuContainerRef}>
+            <button
+              className={`${s.topBtn} ${showTextBlockMenu ? s.topBtnActive : ''}`}
+              onClick={() => setShowTextBlockMenu(!showTextBlockMenu)}
+            >
+              <Plus size={12} /> Add Text
+            </button>
+
+            <AnimatePresence>
+              {showTextBlockMenu && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                  transition={{ duration: 0.15 }}
+                  className={s.textDropdown}
+                >
+                  <div className={s.textDropdownHeader}>Text Presets</div>
+                  <div className={s.textDropdownGrid}>
+                    {TEXT_BLOCKS.map(block => (
+                      <button
+                        key={block.id}
+                        className={s.textPresetBtn}
+                        onClick={() => addTextBlock(block)}
+                        style={{
+                          fontSize: Math.min(18, block.fontSize * 0.4),
+                          fontWeight: block.fontWeight,
+                          color: block.gradient ? 'transparent' : block.color,
+                          backgroundImage: block.gradient ? 'linear-gradient(135deg, #a855f7, #6366f1)' : 'none',
+                          WebkitBackgroundClip: block.gradient ? 'text' : 'border-box',
+                          backgroundClip: block.gradient ? 'text' : 'border-box',
+                        }}
+                      >
+                        {block.label}
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
 
         <div className={s.topBarRight}>
@@ -547,10 +732,11 @@ export default function CinematicStudioPage() {
           </button>
           <button
             className={s.exportBtn}
-            onClick={() => addToast('Export requires Remotion integration', 'info')}
+            onClick={handleExportVideo}
+            disabled={isExporting}
           >
-            <Download size={11} />
-            Export
+            {isExporting ? <div className={s.recordDot} /> : <Download size={11} />}
+            {isExporting ? 'Recording...' : 'Export'}
           </button>
         </div>
       </div>
@@ -605,6 +791,20 @@ export default function CinematicStudioPage() {
               addScene={addScene}
               getVariants={getVariants}
               animKey={animKey}
+              textLayers={textLayers}
+              activeTextLayerId={activeTextLayerId}
+              editingTextLayerId={editingTextLayerId}
+              setActiveTextLayerId={setActiveTextLayerId}
+              setEditingTextLayerId={setEditingTextLayerId}
+              updateTextLayer={updateTextLayer}
+              draggingLayerRef={draggingLayerRef}
+              dragStartRef={dragStartRef}
+              resizeLayerRef={resizeLayerRef}
+              resizeStartRef={resizeStartRef}
+              isExporting={isExporting}
+              handleTextLayerPointerDown={handleTextLayerPointerDown}
+              handleTextLayerPointerMove={handleTextLayerPointerMove}
+              handleTextLayerPointerUp={handleTextLayerPointerUp}
             />
           </div>
 
