@@ -379,7 +379,7 @@ export default function CinematicStudioPage() {
       id,
       name: `Scene ${scenes.length + 1}`,
       duration: 3,
-      animation: 'floating',
+      animation: 'floating-drift',
       easing: 'spring',
       camera: { ...DEFAULT_CAMERA },
       color: colors[scenes.length % colors.length],

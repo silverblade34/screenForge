@@ -15,10 +15,10 @@ interface CanvasAreaProps {
   background: BackgroundOption;
   layers: Layer[];
   camera: CameraState;
-  fileInputRef: React.RefObject<HTMLInputElement>;
+  fileInputRef: React.RefObject<HTMLInputElement | null>;
   handleFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleDrop: (e: React.DragEvent) => void;
-  handleDeviceScreenClick: () => void;
+  handleDeviceScreenClick: (e: React.MouseEvent<HTMLDivElement>) => void;
   handleSceneSeek: (id: string) => void;
   handlePlayPause: () => void;
   addScene: () => void;
@@ -85,7 +85,7 @@ export default function CanvasArea({
             background: 'radial-gradient(ellipse, rgba(168,85,247,0.18) 0%, transparent 70%)',
             pointerEvents: 'none',
             opacity: glowLayer.opacity / 100,
-            animation: activeScene.animation === 'startup-launch' || activeScene.animation === 'floating'
+            animation: activeScene.animation === 'hero-reveal' || activeScene.animation === 'floating-drift'
               ? 'none' : undefined,
           }} />
         )}
