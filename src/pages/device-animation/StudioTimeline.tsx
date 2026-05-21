@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useCallback } from 'react';
+import React, { useRef, useCallback, useState, useEffect } from 'react';
 import { Play, Pause, SkipBack, SkipForward, Type } from 'lucide-react';
 import { SceneScene, TextLayer } from './types';
 import s from './page.module.css';
@@ -18,6 +18,8 @@ interface Props {
   textLayers?: TextLayer[];
   activeTextLayerId?: string | null;
   setActiveTextLayerId?: (id: string | null) => void;
+  deleteTextLayer?: (id: string) => void;
+  updateTextLayer?: (id: string, updates: Partial<TextLayer>) => void;
 }
 
 const TRACK_COLORS = ['#ec4899', '#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444'];
@@ -25,9 +27,20 @@ const TRACK_COLORS = ['#ec4899', '#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#e
 export default function StudioTimeline({
   scenes, activeSceneId, currentTime, isPlaying,
   totalDuration, onSelectScene, onTimeChange, onPlayPause, onRestart,
-  textLayers = [], activeTextLayerId, setActiveTextLayerId
+  textLayers = [], activeTextLayerId, setActiveTextLayerId, deleteTextLayer, updateTextLayer
 }: Props) {
   const trackRef = useRef<HTMLDivElement>(null);
+  const [contextMenu, setContextMenu] = useState<{ id: string; x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      // Don't close if we just right clicked
+      if (e.button === 2 || e.ctrlKey) return;
+      setContextMenu(null);
+    };
+    window.addEventListener('mousedown', handleClick);
+    return () => window.removeEventListener('mousedown', handleClick);
+  }, []);
 
   const seekTo = useCallback((e: React.MouseEvent) => {
     if (!trackRef.current) return;
@@ -161,7 +174,35 @@ export default function StudioTimeline({
               <div key={layer.id} className={s.trackRow}>
                 <div
                   className={s.trackClip}
-                  onClick={(e) => { e.stopPropagation(); setActiveTextLayerId?.(layer.id); }}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setContextMenu({ id: layer.id, x: e.clientX, y: e.clientY });
+                  }}
+                  onMouseDown={(e) => {
+                    if (e.button !== 0 || e.ctrlKey) return; // Only drag on left click
+                    // Si no estamos haciendo clic en un resize handle, seleccionamos y preparamos arrastre
+                    if (!(e.target as HTMLElement).className.includes('resizeHandle')) {
+                      setActiveTextLayerId?.(layer.id);
+                      e.preventDefault();
+                      if (!trackRef.current) return;
+                      const rect = trackRef.current.getBoundingClientRect();
+                      const initialStartTime = layer.startTime ?? 0;
+                      const startX = e.clientX;
+                      
+                      const move = (me: MouseEvent) => {
+                        const dx = me.clientX - startX;
+                        const dt = (dx / rect.width) * totalDuration;
+                        let newStartTime = initialStartTime + dt;
+                        const duration = layer.duration ?? 3;
+                        newStartTime = Math.max(0, Math.min(newStartTime, totalDuration - duration));
+                        updateTextLayer?.(layer.id, { startTime: newStartTime });
+                      };
+                      const up = () => { window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up); };
+                      window.addEventListener('mousemove', move);
+                      window.addEventListener('mouseup', up);
+                    }
+                  }}
                   style={{
                     left: `${left}%`,
                     width: `calc(${width}% - 2px)`,
@@ -169,11 +210,69 @@ export default function StudioTimeline({
                     border: `1px solid ${isActive ? color : color + '60'}`,
                     color: color,
                     cursor: 'pointer',
-                    zIndex: isActive ? 10 : 1
+                    zIndex: isActive ? 10 : 1,
+                    position: 'absolute'
                   }}
                 >
-                  <Type size={10} style={{ marginRight: 4, display: 'inline' }} />
-                  {layer.text.substring(0, 15)}...
+                  <Type size={10} style={{ marginRight: 4, display: 'inline', pointerEvents: 'none' }} />
+                  <span style={{ pointerEvents: 'none' }}>{layer.text.substring(0, 15)}...</span>
+                  
+                  {/* Left Resize Handle */}
+                  <div
+                    className="resizeHandle"
+                    style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 8, cursor: 'ew-resize' }}
+                    onMouseDown={(e) => {
+                      if (e.button !== 0 || e.ctrlKey) return;
+                      e.stopPropagation();
+                      e.preventDefault();
+                      setActiveTextLayerId?.(layer.id);
+                      if (!trackRef.current) return;
+                      const rect = trackRef.current.getBoundingClientRect();
+                      const initialStartTime = layer.startTime ?? 0;
+                      const initialDuration = layer.duration ?? 3;
+                      
+                      const move = (me: MouseEvent) => {
+                        const x = me.clientX - rect.left;
+                        const pct = Math.max(0, Math.min(1, x / rect.width));
+                        const newStartTime = pct * totalDuration;
+                        const diff = newStartTime - initialStartTime;
+                        const newDuration = Math.max(0.1, initialDuration - diff);
+                        
+                        if (newStartTime < initialStartTime + initialDuration - 0.1) {
+                          updateTextLayer?.(layer.id, { startTime: newStartTime, duration: newDuration });
+                        }
+                      };
+                      const up = () => { window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up); };
+                      window.addEventListener('mousemove', move);
+                      window.addEventListener('mouseup', up);
+                    }}
+                  />
+                  
+                  {/* Right Resize Handle */}
+                  <div
+                    className="resizeHandle"
+                    style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 8, cursor: 'ew-resize' }}
+                    onMouseDown={(e) => {
+                      if (e.button !== 0 || e.ctrlKey) return;
+                      e.stopPropagation();
+                      e.preventDefault();
+                      setActiveTextLayerId?.(layer.id);
+                      if (!trackRef.current) return;
+                      const rect = trackRef.current.getBoundingClientRect();
+                      const initialStartTime = layer.startTime ?? 0;
+                      
+                      const move = (me: MouseEvent) => {
+                        const x = me.clientX - rect.left;
+                        const pct = Math.max(0, Math.min(1, x / rect.width));
+                        const newEndTime = pct * totalDuration;
+                        const newDuration = Math.max(0.1, newEndTime - initialStartTime);
+                        updateTextLayer?.(layer.id, { duration: newDuration });
+                      };
+                      const up = () => { window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up); };
+                      window.addEventListener('mousemove', move);
+                      window.addEventListener('mouseup', up);
+                    }}
+                  />
                 </div>
               </div>
             );
@@ -184,6 +283,7 @@ export default function StudioTimeline({
 
           {/* Playhead */}
           <div className={s.playhead} style={{ left: `${playheadPct}%` }}>
+            <div className={s.playheadLine} />
             <div className={s.playheadHead} onMouseDown={e => {
               e.stopPropagation();
               const move = (me: MouseEvent) => {
@@ -201,6 +301,54 @@ export default function StudioTimeline({
           </div>
         </div>
       </div>
+
+      {/* Context Menu for Text Clips */}
+      {contextMenu && (
+        <div
+          style={{
+            position: 'fixed',
+            left: contextMenu.x,
+            top: contextMenu.y,
+            background: '#18181b',
+            border: '1px solid #3f3f46',
+            borderRadius: 8,
+            padding: 4,
+            zIndex: 9999,
+            display: 'flex',
+            flexDirection: 'column',
+            minWidth: 140,
+            boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            style={{ padding: '8px 12px', fontSize: '0.75rem', color: '#e4e4e7', textAlign: 'left', background: 'transparent', border: 'none', borderRadius: 4, cursor: 'pointer' }}
+            onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+            onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+            onClick={() => {
+              const layer = textLayers.find(l => l.id === contextMenu.id);
+              if (layer && updateTextLayer) {
+                alert('Copy functionality can be added later.');
+              }
+              setContextMenu(null);
+            }}
+          >
+            Copy Text Layer
+          </button>
+          <div style={{ height: 1, background: '#3f3f46', margin: '4px 0' }} />
+          <button
+            style={{ padding: '8px 12px', fontSize: '0.75rem', color: '#ef4444', textAlign: 'left', background: 'transparent', border: 'none', borderRadius: 4, cursor: 'pointer' }}
+            onMouseOver={(e) => e.currentTarget.style.background = 'rgba(239,68,68,0.1)'}
+            onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+            onClick={() => {
+              deleteTextLayer?.(contextMenu.id);
+              setContextMenu(null);
+            }}
+          >
+            Delete Layer
+          </button>
+        </div>
+      )}
     </div>
   );
 }

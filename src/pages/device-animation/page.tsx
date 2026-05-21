@@ -836,6 +836,11 @@ export default function CinematicStudioPage() {
               textLayers={textLayers}
               activeTextLayerId={activeTextLayerId}
               setActiveTextLayerId={setActiveTextLayerId}
+              deleteTextLayer={(id) => {
+                setTextLayers(prev => prev.filter(l => l.id !== id));
+                if (activeTextLayerId === id) setActiveTextLayerId(null);
+              }}
+              updateTextLayer={updateTextLayer}
               onSelectScene={handleSceneSeek}
               onTimeChange={t => { setCurrentTime(t); setIsPlaying(false); }}
               onPlayPause={handlePlayPause}
@@ -851,6 +856,8 @@ export default function CinematicStudioPage() {
             scenes={scenes}
             textLayers={textLayers}
             activeTextLayerId={activeTextLayerId}
+            setActiveTextLayerId={setActiveTextLayerId}
+            setTextLayers={setTextLayers}
             updateTextLayer={updateTextLayer}
             deleteTextLayer={(id) => {
               setTextLayers(prev => prev.filter(l => l.id !== id));

@@ -26,7 +26,7 @@ interface Props {
   onHotspotDelete: (id: string) => void;
   onSceneRename: (name: string) => void;
   onSceneDelete: () => void;
-  
+
   textLayers?: TextLayer[];
   setTextLayers?: React.Dispatch<React.SetStateAction<TextLayer[]>>;
   activeTextLayerId?: string | null;
@@ -87,7 +87,7 @@ export default function RightSidebar({
 }: Props) {
   const speed = scene.cameraSpeed ?? 1;
   const mode = scene.mode || 'animation';
-  
+
   const activeTextLayer = activeTextLayerId ? textLayers.find(l => l.id === activeTextLayerId) : null;
 
   return (
@@ -208,7 +208,7 @@ export default function RightSidebar({
                   <input type="text" className={s.numberInput} value={activeTextLayer.color} onChange={e => updateTextLayer(activeTextLayer.id, { color: e.target.value, gradient: false })} style={{ flex: 1, padding: '4px 8px' }} />
                 </div>
               </div>
-              
+
               <div className={s.inputRow} style={{ margin: '4px 0' }}>
                 <label className={s.inputLabel}>Gradient (Optional)</label>
                 <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
@@ -247,14 +247,6 @@ export default function RightSidebar({
                 </button>
               ))}
             </div>
-
-            <button
-              className={s.btnPrimary}
-              style={{ marginTop: 16, background: 'rgba(255,255,255,0.05)', color: '#e4e4e7' }}
-              onClick={() => setActiveTextLayerId(null)}
-            >
-              Done Editing
-            </button>
           </div>
         </>
       )}
@@ -263,59 +255,59 @@ export default function RightSidebar({
       <div style={{ display: activeTextLayer ? 'none' : 'block' }}>
         {/* Scene Identity */}
         <div className={s.inspectorSection} style={{ paddingBottom: 16, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <input
-            type="text"
-            className={s.numberInput}
-            style={{ flex: 1, padding: '6px 8px', fontSize: '0.7rem', fontWeight: 600 }}
-            value={scene.name}
-            onChange={e => onSceneRename(e.target.value)}
-            placeholder="Scene Name"
-          />
-          <button
-            onClick={onSceneDelete}
-            style={{ 
-              background: 'rgba(239, 68, 68, 0.1)', 
-              color: '#ef4444', 
-              border: '1px solid rgba(239, 68, 68, 0.2)', 
-              padding: '6px', 
-              borderRadius: '6px', 
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0
-            }}
-            title="Delete Scene"
-          >
-            <Trash2 size={14} />
-          </button>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <input
+              type="text"
+              className={s.numberInput}
+              style={{ flex: 1, padding: '6px 8px', fontSize: '0.7rem', fontWeight: 600 }}
+              value={scene.name}
+              onChange={e => onSceneRename(e.target.value)}
+              placeholder="Scene Name"
+            />
+            <button
+              onClick={onSceneDelete}
+              style={{
+                background: 'rgba(239, 68, 68, 0.1)',
+                color: '#ef4444',
+                border: '1px solid rgba(239, 68, 68, 0.2)',
+                padding: '6px',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }}
+              title="Delete Scene"
+            >
+              <Trash2 size={14} />
+            </button>
+          </div>
         </div>
-      </div>
 
-      {/* Scene Mode Selector */}
-      <div className={s.inspectorSection}>
-        <SectionHeader icon={<Settings2 size={10} />} label="Scene Mode" />
-        <div className={s.modeGrid} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginBottom: 12 }}>
-          <button
-            className={`${s.easingBtn} ${mode === 'animation' ? s.easingBtnActive : ''}`}
-            onClick={() => onModeChange('animation')}
-            title="Classic 3D animation"
-            style={{ padding: '6px 4px', fontSize: '0.55rem' }}
-          >
-            <Film size={12} style={{ margin: '0 auto 4px auto', display: 'block' }} />
-            Animation
-          </button>
-          <button
-            className={`${s.easingBtn} ${mode === 'scroll' ? s.easingBtnActive : ''}`}
-            onClick={() => onModeChange('scroll')}
-            title="Auto-scroll long screenshot"
-            style={{ padding: '6px 4px', fontSize: '0.55rem' }}
-          >
-            <ScrollText size={12} style={{ margin: '0 auto 4px auto', display: 'block' }} />
-            Scroll
-          </button>
-          {/* <button
+        {/* Scene Mode Selector */}
+        <div className={s.inspectorSection}>
+          <SectionHeader icon={<Settings2 size={10} />} label="Scene Mode" />
+          <div className={s.modeGrid} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginBottom: 12 }}>
+            <button
+              className={`${s.easingBtn} ${mode === 'animation' ? s.easingBtnActive : ''}`}
+              onClick={() => onModeChange('animation')}
+              title="Classic 3D animation"
+              style={{ padding: '6px 4px', fontSize: '0.55rem' }}
+            >
+              <Film size={12} style={{ margin: '0 auto 4px auto', display: 'block' }} />
+              Animation
+            </button>
+            <button
+              className={`${s.easingBtn} ${mode === 'scroll' ? s.easingBtnActive : ''}`}
+              onClick={() => onModeChange('scroll')}
+              title="Auto-scroll long screenshot"
+              style={{ padding: '6px 4px', fontSize: '0.55rem' }}
+            >
+              <ScrollText size={12} style={{ margin: '0 auto 4px auto', display: 'block' }} />
+              Scroll
+            </button>
+            {/* <button
             className={`${s.easingBtn} ${mode === 'flow' ? s.easingBtnActive : ''}`}
             onClick={() => onModeChange('flow')}
             title="Interactive prototype flow"
@@ -324,263 +316,263 @@ export default function RightSidebar({
             <Network size={12} style={{ margin: '0 auto 4px auto', display: 'block' }} />
             Flow
           </button> */}
+          </div>
+          <p style={{ fontSize: '0.6rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+            {mode === 'animation' && 'Cinematic camera-first motion — elegant, Apple-inspired movement.'}
+            {mode === 'scroll' && 'Upload a long vertical image to auto-scroll inside the screen.'}
+            {mode === 'flow' && 'Click on the device screen to add interactive hotspots that link to other scenes.'}
+          </p>
         </div>
-        <p style={{ fontSize: '0.6rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-          {mode === 'animation' && 'Cinematic camera-first motion — elegant, Apple-inspired movement.'}
-          {mode === 'scroll' && 'Upload a long vertical image to auto-scroll inside the screen.'}
-          {mode === 'flow' && 'Click on the device screen to add interactive hotspots that link to other scenes.'}
-        </p>
-      </div>
 
-      {mode === 'animation' && (
-        <>
+        {mode === 'animation' && (
+          <>
+            <div className={s.inspectorSection}>
+              <SectionHeader icon={<Zap size={10} />} label="Scene Presets" />
+              <div className={s.presetGrid}>
+                {SCENE_PRESETS.map(p => (
+                  <button
+                    key={p.label}
+                    className={`${s.presetBtn} ${scene.animation === p.animation ? s.presetBtnActive : ''}`}
+                    onClick={() => { onAnimationChange(p.animation); onEasingChange(p.easing); }}
+                  >
+                    <div className={s.presetMeta}>
+                      <span className={s.presetName}>{p.label}</span>
+                      <span className={s.presetDesc}>{p.desc}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className={s.inspectorSection}>
+              <SectionHeader icon={<Sliders size={10} />} label="Animation" />
+              <div className={s.presetGrid}>
+                {ANIMATION_PRESETS.map(a => (
+                  <button
+                    key={a.value}
+                    className={`${s.presetBtn} ${scene.animation === a.value ? s.presetBtnActive : ''}`}
+                    onClick={() => onAnimationChange(a.value)}
+                  >
+                    <span className={s.presetIcon}>{getAnimationIcon(a.icon)}</span>
+                    <div className={s.presetMeta}>
+                      <span className={s.presetName}>{a.label}</span>
+                      <span className={s.presetDesc}>{a.desc}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className={s.inspectorSection}>
+              <SectionHeader icon={<Activity size={10} />} label="Easing" />
+              <div className={s.easingGrid}>
+                {EASINGS.map(e => (
+                  <button
+                    key={e.value}
+                    className={`${s.easingBtn} ${scene.easing === e.value ? s.easingBtnActive : ''}`}
+                    onClick={() => onEasingChange(e.value)}
+                  >
+                    {e.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
+        {mode === 'scroll' && (
           <div className={s.inspectorSection}>
-            <SectionHeader icon={<Zap size={10} />} label="Scene Presets" />
-            <div className={s.presetGrid}>
-              {SCENE_PRESETS.map(p => (
-                <button
-                  key={p.label}
-                  className={`${s.presetBtn} ${scene.animation === p.animation ? s.presetBtnActive : ''}`}
-                  onClick={() => { onAnimationChange(p.animation); onEasingChange(p.easing); }}
-                >
-                  <div className={s.presetMeta}>
-                    <span className={s.presetName}>{p.label}</span>
-                    <span className={s.presetDesc}>{p.desc}</span>
+            <SectionHeader icon={<Clock size={10} />} label="Scroll Speed" />
+            <div className={s.inputRow}>
+              <label className={s.inputLabel}>Scroll Duration (seconds)</label>
+              <input
+                type="number"
+                className={s.numberInput}
+                min={1} max={60} step={1}
+                value={scene.scrollSpeed ?? 6}
+                onChange={e => {
+                  const val = parseFloat(e.target.value);
+                  onScrollSpeedChange(val);
+                  onDurationChange(val);
+                }}
+              />
+            </div>
+            <p style={{ fontSize: '0.6rem', color: 'var(--text-muted)', marginTop: 8, lineHeight: 1.5 }}>
+              Time it takes to scroll from the top of the image to the bottom.
+            </p>
+          </div>
+        )}
+
+        {mode === 'flow' && (
+          <div className={s.inspectorSection}>
+            <SectionHeader icon={<Network size={10} />} label="Hotspots" />
+            {(scene.hotspots || []).length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '20px 10px', background: 'rgba(255,255,255,0.02)', borderRadius: 8, border: '1px dashed rgba(255,255,255,0.1)' }}>
+                <PlusCircle size={16} style={{ color: '#a1a1aa', margin: '0 auto 8px auto' }} />
+                <p style={{ fontSize: '0.65rem', color: '#71717a' }}>Click anywhere on the device screen to add a cinematic hotspot.</p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {scene.hotspots.map((h, i) => (
+                  <div key={h.id} style={{ padding: 10, background: 'rgba(255,255,255,0.03)', borderRadius: 6, border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                      <span style={{ fontSize: '0.65rem', fontWeight: 600, color: '#e4e4e7' }}>Hotspot {i + 1}</span>
+                      <button onClick={() => onHotspotDelete(h.id)} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '0.6rem', cursor: 'pointer' }}>Delete</button>
+                    </div>
+
+                    {/* Target Scene */}
+                    <div className={s.inputRow} style={{ margin: '4px 0' }}>
+                      <label className={s.inputLabel}>Navigate to</label>
+                      <select
+                        className={s.numberInput}
+                        style={{ width: '100%', padding: '4px 6px', marginTop: 4 }}
+                        value={h.targetSceneId || ''}
+                        onChange={e => onHotspotUpdate(h.id, { targetSceneId: e.target.value })}
+                      >
+                        <option value="">Select target scene...</option>
+                        {scenes.filter(s => s.id !== scene.id).map(s => (
+                          <option key={s.id} value={s.id}>{s.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Label */}
+                    <div className={s.inputRow} style={{ margin: '4px 0' }}>
+                      <label className={s.inputLabel}>Label (Optional)</label>
+                      <input
+                        type="text"
+                        className={s.numberInput}
+                        style={{ width: '100%', padding: '4px 6px', marginTop: 4, textAlign: 'left' }}
+                        value={h.label || ''}
+                        placeholder="e.g. Explore Feature"
+                        onChange={e => onHotspotUpdate(h.id, { label: e.target.value })}
+                      />
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 4 }}>
+                      {/* Shape */}
+                      <div className={s.inputRow} style={{ margin: 0 }}>
+                        <label className={s.inputLabel}>Shape</label>
+                        <select
+                          className={s.numberInput}
+                          style={{ width: '100%', padding: '4px 6px', marginTop: 4 }}
+                          value={h.shape || 'circle'}
+                          onChange={e => onHotspotUpdate(h.id, { shape: e.target.value as any })}
+                        >
+                          <option value="circle">Circle</option>
+                          <option value="pill">Pill</option>
+                          <option value="invisible">Invisible</option>
+                        </select>
+                      </div>
+
+                      {/* Animation */}
+                      <div className={s.inputRow} style={{ margin: 0 }}>
+                        <label className={s.inputLabel}>Animation</label>
+                        <select
+                          className={s.numberInput}
+                          style={{ width: '100%', padding: '4px 6px', marginTop: 4 }}
+                          value={h.animationPreset || 'pulse'}
+                          onChange={e => onHotspotUpdate(h.id, { animationPreset: e.target.value as any })}
+                        >
+                          <option value="none">None</option>
+                          <option value="pulse">Pulse</option>
+                          <option value="glow">Glow</option>
+                          <option value="float">Float</option>
+                          <option value="fade">Fade</option>
+                          <option value="ripple">Ripple</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Opacity */}
+                    <div className={s.inputRow} style={{ margin: '8px 0 0 0' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                        <label className={s.inputLabel}>Opacity</label>
+                        <span className={s.inputLabel}>{h.opacity !== undefined ? h.opacity : 100}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        className={s.slider}
+                        min={0} max={100}
+                        value={h.opacity !== undefined ? h.opacity : 100}
+                        onChange={e => onHotspotUpdate(h.id, { opacity: parseInt(e.target.value) })}
+                      />
+                    </div>
+
                   </div>
-                </button>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
+        )}
 
-          <div className={s.inspectorSection}>
-            <SectionHeader icon={<Sliders size={10} />} label="Animation" />
-            <div className={s.presetGrid}>
-              {ANIMATION_PRESETS.map(a => (
-                <button
-                  key={a.value}
-                  className={`${s.presetBtn} ${scene.animation === a.value ? s.presetBtnActive : ''}`}
-                  onClick={() => onAnimationChange(a.value)}
-                >
-                  <span className={s.presetIcon}>{getAnimationIcon(a.icon)}</span>
-                  <div className={s.presetMeta}>
-                    <span className={s.presetName}>{a.label}</span>
-                    <span className={s.presetDesc}>{a.desc}</span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className={s.inspectorSection}>
-            <SectionHeader icon={<Activity size={10} />} label="Easing" />
-            <div className={s.easingGrid}>
-              {EASINGS.map(e => (
-                <button
-                  key={e.value}
-                  className={`${s.easingBtn} ${scene.easing === e.value ? s.easingBtnActive : ''}`}
-                  onClick={() => onEasingChange(e.value)}
-                >
-                  {e.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </>
-      )}
-
-      {mode === 'scroll' && (
+        {/* Common Properties: Duration & Camera Speed */}
         <div className={s.inspectorSection}>
-          <SectionHeader icon={<Clock size={10} />} label="Scroll Speed" />
+          <SectionHeader icon={<Clock size={10} />} label="Scene Duration" />
           <div className={s.inputRow}>
-            <label className={s.inputLabel}>Scroll Duration (seconds)</label>
+            <label className={s.inputLabel}>Duration (seconds)</label>
             <input
               type="number"
               className={s.numberInput}
-              min={1} max={60} step={1}
-              value={scene.scrollSpeed ?? 6}
-              onChange={e => {
-                const val = parseFloat(e.target.value);
-                onScrollSpeedChange(val);
-                onDurationChange(val);
-              }}
+              min={0.5} max={30} step={0.5}
+              value={scene.duration}
+              onChange={e => onDurationChange(parseFloat(e.target.value))}
             />
           </div>
-          <p style={{ fontSize: '0.6rem', color: 'var(--text-muted)', marginTop: 8, lineHeight: 1.5 }}>
-            Time it takes to scroll from the top of the image to the bottom.
-          </p>
-        </div>
-      )}
-
-      {mode === 'flow' && (
-        <div className={s.inspectorSection}>
-          <SectionHeader icon={<Network size={10} />} label="Hotspots" />
-          {(scene.hotspots || []).length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '20px 10px', background: 'rgba(255,255,255,0.02)', borderRadius: 8, border: '1px dashed rgba(255,255,255,0.1)' }}>
-              <PlusCircle size={16} style={{ color: '#a1a1aa', margin: '0 auto 8px auto' }} />
-              <p style={{ fontSize: '0.65rem', color: '#71717a' }}>Click anywhere on the device screen to add a cinematic hotspot.</p>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {scene.hotspots.map((h, i) => (
-                <div key={h.id} style={{ padding: 10, background: 'rgba(255,255,255,0.03)', borderRadius: 6, border: '1px solid rgba(255,255,255,0.05)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                    <span style={{ fontSize: '0.65rem', fontWeight: 600, color: '#e4e4e7' }}>Hotspot {i + 1}</span>
-                    <button onClick={() => onHotspotDelete(h.id)} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '0.6rem', cursor: 'pointer' }}>Delete</button>
-                  </div>
-
-                  {/* Target Scene */}
-                  <div className={s.inputRow} style={{ margin: '4px 0' }}>
-                    <label className={s.inputLabel}>Navigate to</label>
-                    <select
-                      className={s.numberInput}
-                      style={{ width: '100%', padding: '4px 6px', marginTop: 4 }}
-                      value={h.targetSceneId || ''}
-                      onChange={e => onHotspotUpdate(h.id, { targetSceneId: e.target.value })}
-                    >
-                      <option value="">Select target scene...</option>
-                      {scenes.filter(s => s.id !== scene.id).map(s => (
-                        <option key={s.id} value={s.id}>{s.name}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Label */}
-                  <div className={s.inputRow} style={{ margin: '4px 0' }}>
-                    <label className={s.inputLabel}>Label (Optional)</label>
-                    <input
-                      type="text"
-                      className={s.numberInput}
-                      style={{ width: '100%', padding: '4px 6px', marginTop: 4, textAlign: 'left' }}
-                      value={h.label || ''}
-                      placeholder="e.g. Explore Feature"
-                      onChange={e => onHotspotUpdate(h.id, { label: e.target.value })}
-                    />
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 4 }}>
-                    {/* Shape */}
-                    <div className={s.inputRow} style={{ margin: 0 }}>
-                      <label className={s.inputLabel}>Shape</label>
-                      <select
-                        className={s.numberInput}
-                        style={{ width: '100%', padding: '4px 6px', marginTop: 4 }}
-                        value={h.shape || 'circle'}
-                        onChange={e => onHotspotUpdate(h.id, { shape: e.target.value as any })}
-                      >
-                        <option value="circle">Circle</option>
-                        <option value="pill">Pill</option>
-                        <option value="invisible">Invisible</option>
-                      </select>
-                    </div>
-
-                    {/* Animation */}
-                    <div className={s.inputRow} style={{ margin: 0 }}>
-                      <label className={s.inputLabel}>Animation</label>
-                      <select
-                        className={s.numberInput}
-                        style={{ width: '100%', padding: '4px 6px', marginTop: 4 }}
-                        value={h.animationPreset || 'pulse'}
-                        onChange={e => onHotspotUpdate(h.id, { animationPreset: e.target.value as any })}
-                      >
-                        <option value="none">None</option>
-                        <option value="pulse">Pulse</option>
-                        <option value="glow">Glow</option>
-                        <option value="float">Float</option>
-                        <option value="fade">Fade</option>
-                        <option value="ripple">Ripple</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Opacity */}
-                  <div className={s.inputRow} style={{ margin: '8px 0 0 0' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-                      <label className={s.inputLabel}>Opacity</label>
-                      <span className={s.inputLabel}>{h.opacity !== undefined ? h.opacity : 100}%</span>
-                    </div>
-                    <input
-                      type="range"
-                      className={s.slider}
-                      min={0} max={100}
-                      value={h.opacity !== undefined ? h.opacity : 100}
-                      onChange={e => onHotspotUpdate(h.id, { opacity: parseInt(e.target.value) })}
-                    />
-                  </div>
-
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Common Properties: Duration & Camera Speed */}
-      <div className={s.inspectorSection}>
-        <SectionHeader icon={<Clock size={10} />} label="Scene Duration" />
-        <div className={s.inputRow}>
-          <label className={s.inputLabel}>Duration (seconds)</label>
-          <input
-            type="number"
-            className={s.numberInput}
-            min={0.5} max={30} step={0.5}
-            value={scene.duration}
-            onChange={e => onDurationChange(parseFloat(e.target.value))}
-          />
-        </div>
-        <div className={s.twoCol} style={{ marginTop: 8 }}>
-          {[1, 2, 3, 4, 5, 6].map(d => (
-            <button
-              key={d}
-              className={`${s.easingBtn} ${scene.duration === d ? s.easingBtnActive : ''}`}
-              onClick={() => onDurationChange(d)}
-            >
-              {d}s
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className={s.inspectorSection}>
-        <SectionHeader icon={<Gauge size={10} />} label="Camera Speed" />
-        <div className={s.sliderRow}>
-          <div className={s.sliderMeta}>
-            <span className={s.sliderName}>Transition Speed</span>
-            <span className={s.sliderVal}>{speed.toFixed(1)}×</span>
+          <div className={s.twoCol} style={{ marginTop: 8 }}>
+            {[1, 2, 3, 4, 5, 6].map(d => (
+              <button
+                key={d}
+                className={`${s.easingBtn} ${scene.duration === d ? s.easingBtnActive : ''}`}
+                onClick={() => onDurationChange(d)}
+              >
+                {d}s
+              </button>
+            ))}
           </div>
-          <input
-            type="range" className={s.slider}
-            min={0.1} max={3} step={0.1}
-            value={speed}
-            onChange={e => onCameraSpeedChange(parseFloat(e.target.value))}
-          />
         </div>
-        <div className={s.twoCol} style={{ marginTop: 8 }}>
-          {[{ label: 'Slow', v: 0.3 }, { label: 'Normal', v: 1 }, { label: 'Fast', v: 2 }, { label: 'Instant', v: 3 }].map(o => (
-            <button
-              key={o.label}
-              className={`${s.easingBtn} ${Math.abs(speed - o.v) < 0.05 ? s.easingBtnActive : ''}`}
-              onClick={() => onCameraSpeedChange(o.v)}
-            >
-              {o.label}
-            </button>
-          ))}
-        </div>
-      </div>
 
-      {/* Export Settings */}
-      <div className={s.inspectorSection}>
-        <SectionHeader icon={<Download size={10} />} label="Export" />
-        <div className={s.easingGrid}>
-          {['MP4', 'WebM', 'GIF', 'PNG'].map(f => (
-            <button
-              key={f}
-              className={`${s.easingBtn} ${f === 'MP4' ? s.easingBtnActive : ''}`}
-            >
-              {f}
-            </button>
-          ))}
+        <div className={s.inspectorSection}>
+          <SectionHeader icon={<Gauge size={10} />} label="Camera Speed" />
+          <div className={s.sliderRow}>
+            <div className={s.sliderMeta}>
+              <span className={s.sliderName}>Transition Speed</span>
+              <span className={s.sliderVal}>{speed.toFixed(1)}×</span>
+            </div>
+            <input
+              type="range" className={s.slider}
+              min={0.1} max={3} step={0.1}
+              value={speed}
+              onChange={e => onCameraSpeedChange(parseFloat(e.target.value))}
+            />
+          </div>
+          <div className={s.twoCol} style={{ marginTop: 8 }}>
+            {[{ label: 'Slow', v: 0.3 }, { label: 'Normal', v: 1 }, { label: 'Fast', v: 2 }, { label: 'Instant', v: 3 }].map(o => (
+              <button
+                key={o.label}
+                className={`${s.easingBtn} ${Math.abs(speed - o.v) < 0.05 ? s.easingBtnActive : ''}`}
+                onClick={() => onCameraSpeedChange(o.v)}
+              >
+                {o.label}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+
+        {/* Export Settings */}
+        <div className={s.inspectorSection}>
+          <SectionHeader icon={<Download size={10} />} label="Export" />
+          <div className={s.easingGrid}>
+            {['MP4', 'WebM', 'GIF', 'PNG'].map(f => (
+              <button
+                key={f}
+                className={`${s.easingBtn} ${f === 'MP4' ? s.easingBtnActive : ''}`}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
     </>
   );

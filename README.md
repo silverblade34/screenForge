@@ -60,7 +60,12 @@ Device Animation es una herramienta interactiva de autoría de video y secuencia
     *   Soporte para añadir y organizar múltiples escenas independientes de forma secuencial en una línea de tiempo horizontal.
     *   Modificación de la duración individual de cada escena directamente desde la barra de propiedades o arrastrando clips en el timeline.
     *   *Playhead interactivo:* Barra de reproducción que permite desplazarse (scrubbing) a través de la línea de tiempo global.
-    *   Resizer interactivo del Timeline para personalizar el tamaño de tu área de trabajo (arrastre vertical con bloqueo de selección de texto).
+    *   *Resizer interactivo del Timeline:* Permite personalizar el tamaño vertical del área de trabajo (arrastre vertical con bloqueo de selección de texto).
+*   **Sistema de Textos Cinematográficos (Text Layers):**
+    *   *Capas de Texto Independientes:* Añade múltiples bloques de texto (estilos gradiente, sólidos, etc.) que flotan sobre la composición de video.
+    *   *Pistas Dinámicas (Tracks):* Cada texto añadido crea automáticamente su propia pista (Track 1, Track 2...) en la línea de tiempo, permitiendo sobreponer y organizar capas sin cruces.
+    *   *Ajuste de Tiempo:* Los textos se ajustan en el tiempo moviendo los límites de sus clips (Start Time y Duration) para que coincidan perfectamente con momentos clave de la animación.
+    *   *Animación de Entrada (Entrance Animations):* El motor renderiza animaciones ultra-sincronizadas para el exporte (Fade In, Bounce elástico, Slide Up y Typewriter/Máquina de escribir carácter a carácter).
 *   **Virtual Camera por Escena:**
     *   Cada escena guarda su propia configuración independiente de cámara: *Zoom, Pan X, Pan Y, Tilt X, Tilt Y, Rotation (Z-rot) y Focus Blur (Desenfoque de lente)*.
     *   *Presets de cámara rápida:* Reset, Zoom Top (Enfoque superior), Zoom Bottom (Enfoque inferior), Wide (Gran angular), Side Left (Diagonal izquierda), Side Right (Diagonal derecha).

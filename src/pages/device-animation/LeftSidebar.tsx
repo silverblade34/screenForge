@@ -24,11 +24,9 @@ interface Props {
 }
 
 const DEVICES: { value: DeviceModel; label: string }[] = [
-  { value: 'iphone-16-pro', label: 'iPhone 16 Pro' },
-  { value: 'iphone-16', label: 'iPhone 16' },
-  { value: 'macbook-pro', label: 'MacBook Pro' },
+  { value: 'iphone-16-pro', label: 'iPhone' },
+  { value: 'macbook-pro', label: 'MacBook' },
   { value: 'browser', label: 'Browser' },
-  { value: 'none', label: 'Frameless' },
 ];
 
 const CAMERA_PRESETS: { label: string; cam: Partial<CameraState> }[] = [

@@ -268,10 +268,9 @@ export default function CanvasArea({
         const duration = layer.duration ?? 3;
         const localTime = currentTime - startTime;
         
-        // Hide if outside timeline bounds (unless being exported, wait no, always hide out of bounds)
-        // If actively selected, we might want to still hide it if it's out of bounds so they can see the true state
+        // Hide if outside timeline bounds
         const isVisible = localTime >= 0 && localTime <= duration;
-        if (!isVisible && activeTextLayerId !== layer.id) return null;
+        if (!isVisible) return null;
 
         let animOpacity = 1;
         let animY = 0;
@@ -301,9 +300,6 @@ export default function CanvasArea({
               displayText = layer.text.substring(0, charsToShow);
             }
           }
-        } else {
-          // If not visible but active (selected), show ghosted
-          animOpacity = 0.2;
         }
 
         const isGradient = layer.gradient;
