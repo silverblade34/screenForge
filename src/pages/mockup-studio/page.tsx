@@ -1254,6 +1254,7 @@ export default function MockupStudioPage() {
                 key={layer.id}
                 className={`${s.canvasTextLayer} ${activeLayerId === layer.id && !isExporting ? s.canvasTextLayerActive : ''}`}
                 onDoubleClick={() => setEditingLayerId(layer.id)}
+                onPointerDown={e => handleTextLayerPointerDown(e, layer.id)}
                 onPointerMove={handleTextLayerPointerMove}
                 onPointerUp={handleTextLayerPointerUp}
                 onPointerCancel={handleTextLayerPointerUp}
