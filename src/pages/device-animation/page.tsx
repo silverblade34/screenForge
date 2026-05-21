@@ -267,6 +267,7 @@ export default function CinematicStudioPage() {
   const [device, setDevice] = usePersistedState<DeviceModel>('screenforge_anim_device', 'iphone-16-pro');
   const [frameColor, setFrameColor] = usePersistedState<FrameColor>('screenforge_anim_frameColor', 'spaceBlack');
   const [background, setBackground] = usePersistedState<BackgroundOption>('screenforge_anim_background', BACKGROUNDS[0]);
+  const [browserVariant, setBrowserVariant] = usePersistedState<any>('screenforge_anim_browserVariant', 'safari-light');
 
   // Layers
   const [layers, setLayers] = usePersistedState<Layer[]>('screenforge_anim_layers', DEFAULT_LAYERS);
@@ -785,6 +786,8 @@ export default function CinematicStudioPage() {
             onCamera={handleCameraChange}
             onLayerSelect={setActiveLayer}
             onLayerToggle={handleLayerToggle}
+            browserVariant={browserVariant}
+            onBrowserVariant={setBrowserVariant}
           />
         </div>
 
@@ -809,6 +812,7 @@ export default function CinematicStudioPage() {
               frameColor={frameColor}
               deviceScale={deviceScale}
               background={background}
+              browserVariant={browserVariant}
               layers={layers}
               camera={camera}
               fileInputRef={fileInputRef}

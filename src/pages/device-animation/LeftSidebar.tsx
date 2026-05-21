@@ -6,6 +6,7 @@ import {
   DeviceModel, FrameColor, BackgroundOption,
   CameraState, Layer, FRAME_COLORS, BACKGROUNDS, DEFAULT_CAMERA,
 } from './types';
+import { BrowserVariant } from '@/components/mockup/DeviceFrame';
 import s from './page.module.css';
 
 interface Props {
@@ -21,12 +22,23 @@ interface Props {
   onCamera: (c: Partial<CameraState>) => void;
   onLayerSelect: (id: string) => void;
   onLayerToggle: (id: string) => void;
+  browserVariant?: BrowserVariant;
+  onBrowserVariant?: (v: BrowserVariant) => void;
 }
 
 const DEVICES: { value: DeviceModel; label: string }[] = [
   { value: 'iphone-16-pro', label: 'iPhone' },
   { value: 'macbook-pro', label: 'MacBook' },
   { value: 'browser', label: 'Browser' },
+];
+
+const BROWSER_VARIANTS: { value: BrowserVariant; label: string }[] = [
+  { value: 'safari-light', label: 'Safari Light' },
+  { value: 'safari-dark', label: 'Safari Dark' },
+  { value: 'chrome-light', label: 'Chrome Light' },
+  { value: 'chrome-dark', label: 'Chrome Dark' },
+  { value: 'arc-light', label: 'Arc Light' },
+  { value: 'arc-dark', label: 'Arc Dark' },
 ];
 
 const CAMERA_PRESETS: { label: string; cam: Partial<CameraState> }[] = [
@@ -69,6 +81,7 @@ function SliderRow({ label, value, min, max, step = 1, onChange, unit = '' }: {
 export default function LeftSidebar({
   device, frameColor, background, camera, layers, activeLayer,
   onDevice, onFrameColor, onBackground, onCamera, onLayerSelect, onLayerToggle,
+  browserVariant, onBrowserVariant,
 }: Props) {
   return (
     <>
@@ -110,6 +123,24 @@ export default function LeftSidebar({
                 style={{ background: c.color }}
                 onClick={() => onFrameColor(c.value)}
               />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Browser Variant */}
+      {device === 'browser' && onBrowserVariant && (
+        <div className={s.inspectorSection}>
+          <SectionHeader icon={<Globe size={10} />} label="Browser Style" />
+          <div className={s.deviceGrid}>
+            {BROWSER_VARIANTS.map(v => (
+              <button
+                key={v.value}
+                className={`${s.deviceOption} ${browserVariant === v.value ? s.deviceOptionActive : ''}`}
+                onClick={() => onBrowserVariant(v.value)}
+              >
+                <span style={{ fontSize: '0.56rem', lineHeight: 1.2 }}>{v.label}</span>
+              </button>
             ))}
           </div>
         </div>

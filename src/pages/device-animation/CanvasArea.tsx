@@ -14,6 +14,7 @@ interface CanvasAreaProps {
   frameColor: FrameColor;
   deviceScale: number;
   background: BackgroundOption;
+  browserVariant?: any;
   layers: Layer[];
   camera: CameraState;
   fileInputRef: React.RefObject<HTMLInputElement | null>;
@@ -52,6 +53,7 @@ export default function CanvasArea({
   frameColor,
   deviceScale,
   background,
+  browserVariant,
   layers,
   camera,
   fileInputRef,
@@ -138,10 +140,25 @@ export default function CanvasArea({
     scrollBgPos = `50% ${progress * 100}%`;
   }
 
+  // Build a style object that html2canvas can render correctly
+  // Build a style object that html2canvas can render correctly
+  const bgRaw = background.style?.background as string | undefined;
+  const bgStyle: React.CSSProperties = {
+    ...background.style,
+    ...(bgRaw && (bgRaw.startsWith('linear') || bgRaw.startsWith('radial'))
+      ? { backgroundImage: bgRaw, background: undefined }
+      : {}),
+    ...(bgRaw && (bgRaw.startsWith('#') || bgRaw.startsWith('rgb'))
+      ? { backgroundColor: bgRaw, background: undefined }
+      : {}),
+    // Ensure the shorthand 'background' property is cleared to avoid conflicts
+    background: undefined,
+  };
+
   const animVariants = getVariants(activeScene.animation, activeScene.easing);
 
   return (
-    <div className={s.canvasViewport} style={background.style} onDragOver={e => e.preventDefault()} onDrop={handleDrop}>
+    <div className={s.canvasViewport} style={bgStyle} onDragOver={e => e.preventDefault()} onDrop={handleDrop}>
       <div className={s.canvasGrid} data-export-hide="true" />
 
       {/* Virtual Camera Stage */}
@@ -209,7 +226,7 @@ export default function CanvasArea({
                 onClick={handleDeviceScreenClick}
                 style={{ cursor: activeScene.mode === 'flow' ? 'crosshair' : 'pointer', position: 'relative', width: '100%', height: '100%' }}
               >
-                <DeviceFrame model={device} color={frameColor} scale={deviceScale}>
+                <DeviceFrame model={device} color={frameColor} scale={deviceScale} browserVariant={browserVariant}>
                   {activeScene.image ? (
                     activeScene.mode === 'scroll' ? (
                       <div

@@ -59,8 +59,6 @@ export class ExportRenderer {
       allowTaint: true,
       // The element has its own background; null lets it show through correctly
       backgroundColor: null,
-      // Suppress html2canvas's internal verbose logging
-      logging: false,
       // Skip UI chrome elements marked with data-export-hide="true"
       ignoreElements: (el: Element) =>
         (el as HTMLElement).dataset?.exportHide === 'true',
