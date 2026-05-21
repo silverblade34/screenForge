@@ -12,14 +12,19 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@ffmpeg/core": "0.12.6",
+    "@ffmpeg/ffmpeg": "^0.12.15",
+    "@ffmpeg/util": "^0.12.2",
+    "@types/three": "^0.184.1",
     "@vercel/analytics": "^2.0.1",
     "framer-motion": "^12.39.0",
-    "html2canvas": "^1.4.1",
+    "html2canvas": "1.4.1",
     "jspdf": "^4.2.1",
     "lucide-react": "^1.16.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "react-router-dom": "^7.15.1",
+    "three": "^0.184.0",
     "zustand": "^5.0.13"
   },
   "devDependencies": {

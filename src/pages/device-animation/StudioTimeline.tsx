@@ -30,17 +30,6 @@ export default function StudioTimeline({
   textLayers = [], activeTextLayerId, setActiveTextLayerId, deleteTextLayer, updateTextLayer
 }: Props) {
   const trackRef = useRef<HTMLDivElement>(null);
-  const [contextMenu, setContextMenu] = useState<{ id: string; x: number; y: number } | null>(null);
-
-  useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      // Don't close if we just right clicked
-      if (e.button === 2 || e.ctrlKey) return;
-      setContextMenu(null);
-    };
-    window.addEventListener('mousedown', handleClick);
-    return () => window.removeEventListener('mousedown', handleClick);
-  }, []);
 
   const seekTo = useCallback((e: React.MouseEvent) => {
     if (!trackRef.current) return;
@@ -174,11 +163,6 @@ export default function StudioTimeline({
               <div key={layer.id} className={s.trackRow}>
                 <div
                   className={s.trackClip}
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setContextMenu({ id: layer.id, x: e.clientX, y: e.clientY });
-                  }}
                   onMouseDown={(e) => {
                     if (e.button !== 0 || e.ctrlKey) return; // Only drag on left click
                     // Si no estamos haciendo clic en un resize handle, seleccionamos y preparamos arrastre
@@ -302,53 +286,6 @@ export default function StudioTimeline({
         </div>
       </div>
 
-      {/* Context Menu for Text Clips */}
-      {contextMenu && (
-        <div
-          style={{
-            position: 'fixed',
-            left: contextMenu.x,
-            top: contextMenu.y,
-            background: '#18181b',
-            border: '1px solid #3f3f46',
-            borderRadius: 8,
-            padding: 4,
-            zIndex: 9999,
-            display: 'flex',
-            flexDirection: 'column',
-            minWidth: 140,
-            boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
-          }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <button
-            style={{ padding: '8px 12px', fontSize: '0.75rem', color: '#e4e4e7', textAlign: 'left', background: 'transparent', border: 'none', borderRadius: 4, cursor: 'pointer' }}
-            onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-            onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
-            onClick={() => {
-              const layer = textLayers.find(l => l.id === contextMenu.id);
-              if (layer && updateTextLayer) {
-                alert('Copy functionality can be added later.');
-              }
-              setContextMenu(null);
-            }}
-          >
-            Copy Text Layer
-          </button>
-          <div style={{ height: 1, background: '#3f3f46', margin: '4px 0' }} />
-          <button
-            style={{ padding: '8px 12px', fontSize: '0.75rem', color: '#ef4444', textAlign: 'left', background: 'transparent', border: 'none', borderRadius: 4, cursor: 'pointer' }}
-            onMouseOver={(e) => e.currentTarget.style.background = 'rgba(239,68,68,0.1)'}
-            onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
-            onClick={() => {
-              deleteTextLayer?.(contextMenu.id);
-              setContextMenu(null);
-            }}
-          >
-            Delete Layer
-          </button>
-        </div>
-      )}
     </div>
   );
 }

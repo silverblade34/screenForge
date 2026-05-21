@@ -80,10 +80,6 @@ Device Animation es una herramienta interactiva de autoría de video y secuencia
         *   *Sincronización de velocidad:* El scroll calcula el recorrido total de principio a fin ajustado exactamente a la duración asignada a la escena.
         *   *Animación controlada:* El scroll solo avanza cuando se inicia la reproducción global de la animación (Play/Play All).
         *   *Optimización visual:* Implementa `background-size: cover;` eliminando bandas oscuras en los laterales de pantallas móviles.
-    3.  **Flow Mode (Prototipado Interactivo / Hotspots):**
-        *   Permite crear nodos interactivos flotantes (*hotspots*) directamente sobre la pantalla del dispositivo.
-        *   Asignación de "acciones de salto" a cada hotspot para enlazar con cualquier otra escena de tu proyecto.
-        *   Durante el modo de reproducción (Play), hacer clic en un hotspot reubica el reproductor al inicio de la escena vinculada de manera inmediata.
 *   **Gestión de Capas e Iluminación (Layers & Lighting):**
     *   *Lighting Panel:* Controla la iluminación ambiental, intensidad de brillos y la iluminación de contorno del dispositivo (Rim Light).
     *   *Layer List:* Lista que permite activar/desactivar y controlar la opacidad individual de las capas virtuales: *Glow (Gradiente de brillo trasero), Shadow (Sombra de base) y Device (Chasis y pantalla)*.
@@ -102,3 +98,110 @@ El código de **Device Animation** está estructurado bajo los siguientes compon
 *   `LeftSidebar.tsx`: Inspector de configuración física (Cámara, Dispositivos, Iluminación, Fondos y Capas).
 *   `RightSidebar.tsx`: Inspector contextual por escena activa (Animaciones, Modos de pantalla, Transiciones de cámara y edición de Hotspots).
 *   `types.ts`: Declaración de tipos fuertemente tipados en TypeScript de todas las propiedades de escena y cámara.
+
+---
+
+## 🎞️ Pipeline de Exportación de Video (Device Animation)
+
+### Arquitectura General
+
+La exportación de video en Device Animation sigue un pipeline de **captura DOM frame-a-frame** en lugar de un renderizado 3D independiente. Esto garantiza **fidelidad pixel-perfect**: el video exportado es exactamente lo que el usuario ve en el workspace (background real, device frame CSS correcto, text layers, animaciones).
+
+```
+ExportDialog (settings) ──► videoExporter.ts ──► ExportRenderer.ts (html2canvas)
+                                │                          │
+                                │    frame PNG Blob ◄──────┘
+                                ▼
+                          ffmpeg.wasm (libx264)
+                                │
+                                ▼
+                           output.mp4
+```
+
+### Por qué se usa `html2canvas` y no `html-to-image`
+
+`html-to-image` serializa el DOM a SVG con `<foreignObject>` y luego carga ese SVG como una imagen. Esto tiene dos problemas críticos:
+
+1. **`SecurityError: Not allowed to access cross-origin stylesheet`** — `html-to-image` intenta leer las reglas CSS de Google Fonts desde `document.styleSheets`, lo cual el navegador bloquea (CORS). Ocurría en cada frame y ralentizaba el export.
+2. **`Not allowed to load local resource: data:image/svg+xml`** — Chrome/WebKit bloquea los SVGs con `<foreignObject>` cargados como `img.src` por política de seguridad. Crasheaba en el frame ~66 (cuando el SVG era lo suficientemente grande).
+
+`html2canvas` evita ambos problemas: camina el DOM y pinta cada elemento directamente en un `<canvas>` 2D, sin SVG, sin acceso a stylesheets, sin data-URLs intermedias.
+
+### Cómo se garantiza la calidad y la independencia del tamaño de ventana
+
+```ts
+// ExportRenderer.ts
+const scale = targetWidth / element.offsetWidth;
+await html2canvas(element, { scale, width: elementW, height: elementH, ... });
+```
+
+Al pasar `scale = targetW / elementW`, `html2canvas` renderiza su canvas interno ya en la resolución de destino (ej. 1920×1080). Así:
+- **No importa si la ventana del browser está minimizada** — el output tiene la misma resolución.
+- **No hay upscaling pixelado** — se captura a la resolución final desde el principio.
+
+### Transición entre escenas durante el export
+
+Durante el export, el componente `CanvasArea` cambia su comportamiento de animación para evitar que `AnimatePresence` con `mode="wait"` bloquee la aparición de la escena 2:
+
+| Modo preview | Modo export |
+|---|---|
+| `AnimatePresence mode="wait"` — espera que la animación de salida termine | `AnimatePresence mode="sync"` — transición inmediata |
+| `initial="initial"` — anima desde el estado inicial | `initial={false}` — monta directamente en el estado final |
+| `key={sceneId + animKey}` — se remonta en replay | `key={sceneId}` — solo se remonta al cambiar de escena |
+
+Además, el callback `onSeekFrame` **no incrementa `animKey`** durante el export. Incrementarlo causaba que el `motion.div` se remontara 180 veces (una por frame), reiniciando la animación de entrada en cada frame e impidiendo que la escena 2 apareciera.
+
+### Loop de frames (videoExporter.ts)
+
+```
+for cada frame i de 0 a totalFrames:
+  1. onSeekFrame(i/fps)           → setCurrentTime(t)  [React state]
+  2. waitForPaint()               → 2x requestAnimationFrame (React repinta)
+  3. renderer.captureFrame()      → html2canvas → PNG Blob
+  4. ffmpeg.writeFile(frame_XXXX.png, blob)
+  5. onProgress(rendering, (i+1)/total, i+1, total)
+```
+
+### Encoding con FFmpeg.wasm
+
+```bash
+ffmpeg -framerate {fps} -i frame_%04d.png \
+  -c:v libx264 \
+  -pix_fmt yuv420p \
+  -preset ultrafast \   # Balance óptimo velocidad/calidad (era 'slow', 10x más lento)
+  -crf {14|18|23} \     # Ultra=14, High=18, Standard=23
+  -vf scale={w}:{h}:flags=lanczos \
+  output.mp4
+```
+
+**¿Por qué `ultrafast` y no `slow`?** La diferencia de calidad visual a resoluciones de pantalla típicas es imperceptible, pero la velocidad de encoding se reduce de ~60s a ~6s para un video de 6s a 30fps.
+
+### Opciones de exportación disponibles
+
+| Opción | Valores | Defecto |
+|---|---|---|
+| Resolución | 720p (1280×720), 1080p (1920×1080), 1440p (2560×1440), 4K (3840×2160) | 1080p |
+| FPS | 24 (cinemático), 30 (estándar), 60 (suave) | 30 |
+| Calidad de encode | Standard (CRF 23), High (CRF 18), Ultra (CRF 14) | Ultra |
+
+### Performance y limitaciones conocidas
+
+- **Tiempo estimado**: ~200–700ms por frame dependiendo de la resolución target. Un video de 6s a 30fps = 180 frames → ~1–3 minutos.
+- **Consumo de RAM**: html2canvas crea un canvas interno de la resolución target. Para 4K (3840×2160) esto puede consumir ~300MB de RAM; usar con precaución.
+- **Animaciones de entrada**: Durante el export, los dispositivos aparecen directamente en su estado final (sin animación de entrada). Las animaciones continuas (floating-drift, ambient-motion) sí se capturan frame-a-frame.
+- **Google Fonts**: Los fonts ya están cargados en la página, por lo que html2canvas los usa correctamente sin necesitar acceder a las stylesheets de Google.
+- **Fondos con radial-gradient/linear-gradient**: html2canvas soporta ambos tipos de gradientes CSS correctamente.
+
+### Archivos del pipeline
+
+```
+src/lib/export/
+├── ExportRenderer.ts     ← Captura DOM → PNG Blob (html2canvas)
+├── videoExporter.ts      ← Orquestación frame loop + FFmpeg encoding
+└── ffmpeg.ts             ← Inicialización lazy de FFmpeg.wasm
+
+src/components/export/
+├── ExportDialog.tsx      ← Modal de configuración (resolución, FPS, calidad)
+└── ExportProgress.tsx    ← UI de progreso con timer, ms/frame y estado de error
+```
+

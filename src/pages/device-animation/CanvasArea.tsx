@@ -95,7 +95,7 @@ export default function CanvasArea({
 
   return (
     <div className={s.canvasViewport} style={background.style} onDragOver={e => e.preventDefault()} onDrop={handleDrop}>
-      <div className={s.canvasGrid} />
+      <div className={s.canvasGrid} data-export-hide="true" />
 
       {/* Virtual Camera Stage */}
       <div
@@ -139,13 +139,13 @@ export default function CanvasArea({
 
         {/* 3D Scene container */}
         <div className={s.sceneCanvas}>
-          <AnimatePresence mode="wait">
+          <AnimatePresence mode={isExporting ? 'sync' : 'wait'}>
             <motion.div
-              key={`${activeScene.id}-${animKey}`}
+              key={isExporting ? activeScene.id : `${activeScene.id}-${animKey}`}
               variants={animVariants}
-              initial="initial"
+              initial={isExporting ? false : 'initial'}
               animate="animate"
-              transition={animVariants.transition}
+              transition={isExporting ? { duration: 0 } : animVariants.transition}
               style={{
                 perspective: 1200,
                 transformStyle: 'preserve-3d',
@@ -393,8 +393,8 @@ export default function CanvasArea({
         );
       })}
 
-      {/* Canvas Overlay */}
-      <div className={s.canvasOverlay}>
+      {/* Canvas Overlay — hidden during export */}
+      <div className={s.canvasOverlay} data-export-hide="true">
         <button
           className={`${s.canvasChip} ${s.playChip}`}
           onClick={handlePlayPause}
@@ -410,7 +410,7 @@ export default function CanvasArea({
         </div>
       </div>
 
-      <div className={s.canvasOverlayRight}>
+      <div className={s.canvasOverlayRight} data-export-hide="true">
         {isPlaying && (
           <div className={s.canvasChip}>
             <div className={s.recordDot} />

@@ -40,6 +40,10 @@ import LeftSidebar from './LeftSidebar';
 import RightSidebar from './RightSidebar';
 import StudioTimeline from './StudioTimeline';
 import CanvasArea from './CanvasArea';
+import { ExportDialog } from '@/components/export/ExportDialog';
+import { ExportProgress } from '@/components/export/ExportProgress';
+import { exportVideo } from '@/lib/export/videoExporter';
+import { ExportSettings } from '@/lib/export/videoExporter';
 import s from './page.module.css';
 
 /* ─── Animation variant builder ──────────────────────────────────────────────
@@ -362,8 +366,17 @@ export default function CinematicStudioPage() {
 
   // Video Export
   const [isExporting, setIsExporting] = useState(false);
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const [exportPhase, setExportPhase] = useState<'rendering' | 'encoding' | null>(null);
+  const [exportProgressVal, setExportProgressVal] = useState(0);
+  const [exportCurrentFrame, setExportCurrentFrame] = useState(0);
+  const [exportTotalFrames, setExportTotalFrames] = useState(0);
+  const [exportError, setExportError] = useState<string | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const chunksRef = useRef<BlobPart[]>([]);
+  const chunksRef = useRef<BlobPart[]>([]); 
+
+  // Ref for the canvas viewport DOM element — used by the DOM-capture exporter
+  const canvasViewportRef = useRef<HTMLDivElement | null>(null);
 
   const totalDuration = useMemo(
     () => scenes.reduce((sum, sc) => sum + sc.duration, 0),
@@ -466,54 +479,59 @@ export default function CinematicStudioPage() {
     }
   };
 
-  const handleExportVideo = async () => {
+  const handleExportVideo = () => {
+    setShowExportDialog(true);
+  };
+
+  const executeExport = async (settings: Omit<ExportSettings, 'canvasElement' | 'onSeekFrame' | 'onProgress'>) => {
+    if (!canvasViewportRef.current) {
+      addToast('Canvas not ready for export', 'error');
+      return;
+    }
+
+    setShowExportDialog(false);
+    setExportPhase('rendering');
+    setExportProgressVal(0);
+    setExportError(null);
+    setIsExporting(true);
+
+    // Snapshot the element reference before the async loop
+    const el = canvasViewportRef.current;
+    console.log('[page] executeExport: starting export, canvas size =', el.offsetWidth, 'x', el.offsetHeight);
+
     try {
-      const stream = await navigator.mediaDevices.getDisplayMedia({
-        video: { displaySurface: 'browser' },
-        audio: false,
-        preferCurrentTab: true,
-      } as any);
+      const url = await exportVideo({
+        ...settings,
+        canvasElement: el,
+        // Called for each frame — advances the timeline so React re-renders.
+        // Do NOT increment animKey here: that remounts the motion.div every frame,
+        // preventing scene 2 from ever appearing in the export.
+        onSeekFrame: (time: number) => {
+          setCurrentTime(time);
+        },
+        onProgress: (phase, progress, cur, tot) => {
+          setExportPhase(phase);
+          setExportProgressVal(progress);
+          if (cur !== undefined) setExportCurrentFrame(cur);
+          if (tot !== undefined) setExportTotalFrames(tot);
+        },
+      });
 
-      const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
-        ? 'video/webm;codecs=vp9'
-        : 'video/webm';
-      
-      const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8000000 });
-      chunksRef.current = [];
-
-      recorder.ondataavailable = (e) => {
-        if (e.data && e.data.size > 0) chunksRef.current.push(e.data);
-      };
-
-      recorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: mimeType });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'screenforge-animation.webm';
-        a.click();
-        URL.revokeObjectURL(url);
-        setIsExporting(false);
-        addToast('Video exported successfully!', 'success');
-        stream.getTracks().forEach(t => t.stop());
-      };
-
-      mediaRecorderRef.current = recorder;
-      setIsExporting(true);
-      setCurrentTime(0);
-      setIsPlaying(false);
-      setAnimKey(k => k + 1);
-
-      // Give React time to render time=0
-      setTimeout(() => {
-        recorder.start(100);
-        setIsPlaying(true);
-      }, 800);
-
-    } catch (err) {
-      console.error(err);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `screenforge-export-${Date.now()}.mp4`;
+      a.click();
+      URL.revokeObjectURL(url);
+      addToast('Video exported successfully!', 'success');
       setIsExporting(false);
-      addToast('Export cancelled or failed', 'error');
+      setExportPhase(null);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error('[page] Export error:', err);
+      // Keep the ExportProgress modal open — switch it to error state
+      setExportError(msg);
+      setExportPhase(null);
+      setIsExporting(false);
     }
   };
 
@@ -773,12 +791,13 @@ export default function CinematicStudioPage() {
         {/* Center Canvas */}
         <div className={s.canvasArea}>
           <div
+            ref={canvasViewportRef}
             className={s.canvasViewport}
             style={background.style}
             onDragOver={e => e.preventDefault()}
             onDrop={handleDrop}
           >
-            <div className={s.canvasGrid} />
+            <div className={s.canvasGrid} data-export-hide="true" />
 
             {/* Virtual Camera Stage & Overlays */}
             <CanvasArea
@@ -894,6 +913,25 @@ export default function CinematicStudioPage() {
           />
         </div>
       </div>
+
+      {showExportDialog && (
+        <ExportDialog
+          onClose={() => setShowExportDialog(false)}
+          onExport={executeExport}
+          duration={totalDuration}
+        />
+      )}
+
+      {(exportPhase || exportError) && (
+        <ExportProgress
+          phase={exportPhase}
+          progress={exportProgressVal}
+          currentFrame={exportCurrentFrame}
+          totalFrames={exportTotalFrames}
+          errorMessage={exportError}
+          onDismissError={() => setExportError(null)}
+        />
+      )}
     </div>
   );
 }

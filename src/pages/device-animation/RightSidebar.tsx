@@ -558,21 +558,6 @@ export default function RightSidebar({
             ))}
           </div>
         </div>
-
-        {/* Export Settings */}
-        <div className={s.inspectorSection}>
-          <SectionHeader icon={<Download size={10} />} label="Export" />
-          <div className={s.easingGrid}>
-            {['MP4', 'WebM', 'GIF', 'PNG'].map(f => (
-              <button
-                key={f}
-                className={`${s.easingBtn} ${f === 'MP4' ? s.easingBtnActive : ''}`}
-              >
-                {f}
-              </button>
-            ))}
-          </div>
-        </div>
       </div>
     </>
   );
