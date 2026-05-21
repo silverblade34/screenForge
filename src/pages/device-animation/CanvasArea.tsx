@@ -7,6 +7,7 @@ import s from './page.module.css';
 
 interface CanvasAreaProps {
   activeScene: SceneScene;
+  scenes: SceneScene[];
   isPlaying: boolean;
   currentTime: number;
   device: DeviceModel;
@@ -44,6 +45,7 @@ interface CanvasAreaProps {
 
 export default function CanvasArea({
   activeScene,
+  scenes,
   isPlaying,
   currentTime,
   device,
@@ -81,15 +83,60 @@ export default function CanvasArea({
   const shadowLayer = layers.find(l => l.id === 'shadow');
   const deviceLayer = layers.find(l => l.id === 'device');
 
+  // 1. Find local time and index
+  let currentSceneIndex = 0;
+  let localTime = 0;
+  let acc = 0;
+  for (let i = 0; i < scenes.length; i++) {
+    if (currentTime >= acc && currentTime < acc + scenes[i].duration) {
+      currentSceneIndex = i;
+      localTime = currentTime - acc;
+      break;
+    }
+    acc += scenes[i].duration;
+    if (i === scenes.length - 1 && currentTime >= acc) {
+      currentSceneIndex = i;
+      localTime = scenes[i].duration;
+    }
+  }
+
+  // 2. Compute effective camera
+  let effectiveCamera = { ...camera };
+  const transitionDuration = 0.6 / (scenes[currentSceneIndex].cameraSpeed || 1);
+  if (currentSceneIndex > 0 && localTime < transitionDuration) {
+    const prevCamera = scenes[currentSceneIndex - 1].camera;
+    const nextCamera = scenes[currentSceneIndex].camera;
+    let t = localTime / transitionDuration;
+    // Apply easeOutExpo equivalent for smoothness
+    t = t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+    effectiveCamera = {
+      zoom: prevCamera.zoom + (nextCamera.zoom - prevCamera.zoom) * t,
+      panX: prevCamera.panX + (nextCamera.panX - prevCamera.panX) * t,
+      panY: prevCamera.panY + (nextCamera.panY - prevCamera.panY) * t,
+      tiltX: prevCamera.tiltX + (nextCamera.tiltX - prevCamera.tiltX) * t,
+      tiltY: prevCamera.tiltY + (nextCamera.tiltY - prevCamera.tiltY) * t,
+      rotation: prevCamera.rotation + (nextCamera.rotation - prevCamera.rotation) * t,
+      blur: prevCamera.blur + (nextCamera.blur - prevCamera.blur) * t,
+    };
+  }
+
   // Compute camera transform
   const cameraTransform = `
-    scale(${camera.zoom})
-    translateX(${camera.panX}px)
-    translateY(${camera.panY}px)
-    rotateX(${camera.tiltX}deg)
-    rotateY(${camera.tiltY}deg)
-    rotateZ(${camera.rotation}deg)
+    scale(${effectiveCamera.zoom})
+    translateX(${effectiveCamera.panX}px)
+    translateY(${effectiveCamera.panY}px)
+    rotateX(${effectiveCamera.tiltX}deg)
+    rotateY(${effectiveCamera.tiltY}deg)
+    rotateZ(${effectiveCamera.rotation}deg)
   `;
+
+  // Compute scroll bg pos
+  let scrollBgPos = 'top center';
+  if (activeScene.mode === 'scroll' && activeScene.image) {
+    const scrollDur = activeScene.scrollSpeed || 6;
+    const progress = Math.min(1, localTime / scrollDur);
+    scrollBgPos = `50% ${progress * 100}%`;
+  }
 
   const animVariants = getVariants(activeScene.animation, activeScene.easing);
 
@@ -102,8 +149,7 @@ export default function CanvasArea({
         className={s.cameraStage}
         style={{
           transform: cameraTransform,
-          filter: camera.blur > 0 ? `blur(${camera.blur}px)` : undefined,
-          transition: `transform ${(0.6 / (activeScene.cameraSpeed ?? 1)).toFixed(2)}s cubic-bezier(0.16,1,0.3,1), filter 0.6s ease`,
+          filter: effectiveCamera.blur > 0 ? `blur(${effectiveCamera.blur}px)` : undefined,
         }}
       >
         {/* Glow Layer */}
@@ -167,11 +213,11 @@ export default function CanvasArea({
                   {activeScene.image ? (
                     activeScene.mode === 'scroll' ? (
                       <div
-                        className={`${s.scrollContainer} ${isPlaying ? s.scrollRunning : ''}`}
+                        className={s.scrollContainer}
                         style={{
-                          '--scroll-duration': `${activeScene.scrollSpeed || 6}s`,
-                          backgroundImage: `url(${activeScene.image})`
-                        } as React.CSSProperties}
+                          backgroundImage: `url(${activeScene.image})`,
+                          backgroundPosition: scrollBgPos,
+                        }}
                       />
                     ) : (
                       <div style={{ position: 'relative', width: '100%', height: '100%' }}>
@@ -263,11 +309,11 @@ export default function CanvasArea({
       {/* Text Layers */}
       {textLayers?.map(layer => {
         if (layer.hidden) return null;
-        
+
         const startTime = layer.startTime ?? 0;
         const duration = layer.duration ?? 3;
         const localTime = currentTime - startTime;
-        
+
         // Hide if outside timeline bounds
         const isVisible = localTime >= 0 && localTime <= duration;
         if (!isVisible) return null;
@@ -280,7 +326,7 @@ export default function CanvasArea({
         if (isVisible) {
           const animInDuration = 0.5; // 500ms entrance
           const inProgress = Math.min(1, Math.max(0, localTime / animInDuration));
-          
+
           if (layer.animationIn === 'fade') {
             animOpacity = inProgress;
           } else if (layer.animationIn === 'slide-up') {
@@ -305,7 +351,7 @@ export default function CanvasArea({
         const isGradient = layer.gradient;
         const gradFrom = layer.gradientFrom ?? '#a855f7';
         const gradTo = layer.gradientTo ?? '#6366f1';
-        
+
         return (
           <div
             key={layer.id}
@@ -392,38 +438,6 @@ export default function CanvasArea({
           </div>
         );
       })}
-
-      {/* Canvas Overlay — hidden during export */}
-      <div className={s.canvasOverlay} data-export-hide="true">
-        <button
-          className={`${s.canvasChip} ${s.playChip}`}
-          onClick={handlePlayPause}
-        >
-          {isPlaying ? (
-            <><span>⏸</span> Pause</>
-          ) : (
-            <><span>▶</span> Play All</>
-          )}
-        </button>
-        <div className={s.canvasChip}>
-          {activeScene.name} · {activeScene.animation.replace(/-/g, ' ')}
-        </div>
-      </div>
-
-      <div className={s.canvasOverlayRight} data-export-hide="true">
-        {isPlaying && (
-          <div className={s.canvasChip}>
-            <div className={s.recordDot} />
-            {currentTime.toFixed(1)}s
-          </div>
-        )}
-        <button
-          className={s.canvasChip}
-          onClick={addScene}
-        >
-          <Plus size={10} /> Scene
-        </button>
-      </div>
     </div>
   );
 }

@@ -802,6 +802,7 @@ export default function CinematicStudioPage() {
             {/* Virtual Camera Stage & Overlays */}
             <CanvasArea
               activeScene={activeScene}
+              scenes={scenes}
               isPlaying={isPlaying}
               currentTime={currentTime}
               device={device}
