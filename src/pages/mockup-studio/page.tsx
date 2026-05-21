@@ -5,7 +5,7 @@ import {
   type CSSProperties, type DragEvent, type ChangeEvent,
 } from 'react';
 import { ToolLayout, SplitPanel } from '@/components/ui/ToolLayout';
-import { Download, Monitor, Crop, Maximize2, Smartphone, Type, AlignLeft, AlignCenter, AlignRight, Trash2, Plus, RotateCcw, Layers } from 'lucide-react';
+import { Download, Monitor, Crop, Maximize2, Smartphone, Type, AlignLeft, AlignCenter, AlignRight, Trash2, Plus, RotateCcw, Layers, Image as ImageIcon } from 'lucide-react';
 import { exportElementToPNG } from '@/lib/exporters';
 import { useToastStore } from '@/lib/toast';
 import { DeviceFrame, type DeviceModel, type FrameColor, type BrowserVariant } from '@/components/mockup/DeviceFrame';
@@ -21,53 +21,53 @@ export interface TextLayer {
   id: string;
   type: 'title' | 'subtitle' | 'caption' | 'badge';
   text: string;
-  
+
   x: number;
   y: number;
   width?: number;
   height?: number;
   rotation?: number;
-  
+
   fontFamily: string;
   fontPreset: string;
-  
+
   fontSize: number;
   fontWeight: number;
   lineHeight: number;
   letterSpacing: number;
-  
+
   color: string;
   opacity: number;
   align: 'left' | 'center' | 'right';
-  
+
   glow: number;
   blur?: number;
-  
+
   gradient?: boolean;
   gradientFrom?: string;
   gradientTo?: string;
-  
+
   shadow?: boolean;
   locked?: boolean;
   hidden?: boolean;
   zIndex: number;
 }
 export const FONT_PRESETS = [
-  { id: 'modern',    label: 'Modern',    font: 'Inter, sans-serif',                                                  preview: 'Aa' },
-  { id: 'cinematic', label: 'Cinematic', font: '"Bebas Neue", sans-serif',                                           preview: 'Aa' },
-  { id: 'luxury',    label: 'Luxury',    font: '"Cormorant Garamond", serif',                                        preview: 'Aa' },
-  { id: 'apple',     label: 'Apple',     font: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif',    preview: 'Aa' },
-  { id: 'editorial', label: 'Editorial', font: '"General Sans", Georgia, serif',                                     preview: 'Aa' },
-  { id: 'mono',      label: 'Mono',      font: '"JetBrains Mono", ui-monospace, monospace',                          preview: 'Aa' },
+  { id: 'modern', label: 'Modern', font: 'Inter, sans-serif', preview: 'Aa' },
+  { id: 'cinematic', label: 'Cinematic', font: '"Bebas Neue", sans-serif', preview: 'Aa' },
+  { id: 'luxury', label: 'Luxury', font: '"Cormorant Garamond", serif', preview: 'Aa' },
+  { id: 'apple', label: 'Apple', font: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif', preview: 'Aa' },
+  { id: 'editorial', label: 'Editorial', font: '"General Sans", Georgia, serif', preview: 'Aa' },
+  { id: 'mono', label: 'Mono', font: '"JetBrains Mono", ui-monospace, monospace', preview: 'Aa' },
 ];
 
 const TEXT_BLOCKS: { id: string; label: string; text: string; type: TextLayer['type']; fontSize: number; fontWeight: number; letterSpacing: number; lineHeight: number; color: string; gradient?: boolean }[] = [
-  { id: 'hero',     label: 'Hero Title',    text: 'The Future of\nProduct Design',     type: 'title',    fontSize: 64, fontWeight: 800, letterSpacing: -2,   lineHeight: 1.0,  color: '#ffffff',  gradient: false },
-  { id: 'launch',   label: 'Launch',        text: 'Introducing ScreenForge 2.0',       type: 'title',    fontSize: 42, fontWeight: 700, letterSpacing: -1.5, lineHeight: 1.05, color: '#ffffff',  gradient: true  },
-  { id: 'feature',  label: 'Feature',       text: 'Powerful timeline editor',          type: 'subtitle', fontSize: 28, fontWeight: 600, letterSpacing: -0.5, lineHeight: 1.2,  color: '#e4e4e7', gradient: false },
-  { id: 'subtitle', label: 'Subtitle',      text: 'Built for modern product teams',    type: 'subtitle', fontSize: 22, fontWeight: 400, letterSpacing: 0,    lineHeight: 1.4,  color: '#a1a1aa', gradient: false },
-  { id: 'cta',      label: 'CTA',           text: 'Start for free →',                  type: 'badge',    fontSize: 14, fontWeight: 700, letterSpacing: 0.5,  lineHeight: 1.4,  color: '#c084fc', gradient: false },
-  { id: 'caption',  label: 'Caption',       text: 'Available on iOS & Android',        type: 'caption',  fontSize: 13, fontWeight: 400, letterSpacing: 0.3,  lineHeight: 1.6,  color: '#71717a', gradient: false },
+  { id: 'hero', label: 'Hero Title', text: 'The Future of\nProduct Design', type: 'title', fontSize: 64, fontWeight: 800, letterSpacing: -2, lineHeight: 1.0, color: '#ffffff', gradient: false },
+  { id: 'launch', label: 'Launch', text: 'Introducing ScreenForge 2.0', type: 'title', fontSize: 42, fontWeight: 700, letterSpacing: -1.5, lineHeight: 1.05, color: '#ffffff', gradient: true },
+  { id: 'feature', label: 'Feature', text: 'Powerful timeline editor', type: 'subtitle', fontSize: 28, fontWeight: 600, letterSpacing: -0.5, lineHeight: 1.2, color: '#e4e4e7', gradient: false },
+  { id: 'subtitle', label: 'Subtitle', text: 'Built for modern product teams', type: 'subtitle', fontSize: 22, fontWeight: 400, letterSpacing: 0, lineHeight: 1.4, color: '#a1a1aa', gradient: false },
+  { id: 'cta', label: 'CTA', text: 'Start for free →', type: 'badge', fontSize: 14, fontWeight: 700, letterSpacing: 0.5, lineHeight: 1.4, color: '#c084fc', gradient: false },
+  { id: 'caption', label: 'Caption', text: 'Available on iOS & Android', type: 'caption', fontSize: 13, fontWeight: 400, letterSpacing: 0.3, lineHeight: 1.6, color: '#71717a', gradient: false },
 ];
 
 interface BgOption {
@@ -92,46 +92,46 @@ const BG_CATEGORIES: BgCategory[] = [
   {
     label: 'Cosmic',
     items: [
-      { id: 'cosmic-1', label: 'Aurora',   thumb: 'linear-gradient(135deg,#6d28d9,#4f46e5,#0ea5e9)', style: { background: 'linear-gradient(135deg,#6d28d9 0%,#4f46e5 50%,#0ea5e9 100%)' } },
-      { id: 'cosmic-2', label: 'Nebula',   thumb: 'linear-gradient(135deg,#7c3aed,#db2777)', style: { background: 'linear-gradient(135deg,#7c3aed,#db2777)' } },
+      { id: 'cosmic-1', label: 'Aurora', thumb: 'linear-gradient(135deg,#6d28d9,#4f46e5,#0ea5e9)', style: { background: 'linear-gradient(135deg,#6d28d9 0%,#4f46e5 50%,#0ea5e9 100%)' } },
+      { id: 'cosmic-2', label: 'Nebula', thumb: 'linear-gradient(135deg,#7c3aed,#db2777)', style: { background: 'linear-gradient(135deg,#7c3aed,#db2777)' } },
       { id: 'cosmic-3', label: 'Midnight', thumb: 'linear-gradient(160deg,#0f0c29,#302b63,#24243e)', style: { background: 'linear-gradient(160deg,#0f0c29,#302b63,#24243e)' } },
-      { id: 'cosmic-4', label: 'Void',     thumb: 'linear-gradient(135deg,#1a1a2e,#16213e,#0f3460)', style: { background: 'linear-gradient(135deg,#1a1a2e,#16213e,#0f3460)' } },
+      { id: 'cosmic-4', label: 'Void', thumb: 'linear-gradient(135deg,#1a1a2e,#16213e,#0f3460)', style: { background: 'linear-gradient(135deg,#1a1a2e,#16213e,#0f3460)' } },
     ],
   },
   {
     label: 'Mystic',
     items: [
-      { id: 'mystic-1', label: 'Soft',     thumb: 'linear-gradient(135deg,#e0e7ff,#c7d2fe,#ddd6fe)', style: { background: 'linear-gradient(135deg,#e0e7ff,#c7d2fe,#ddd6fe)' } },
+      { id: 'mystic-1', label: 'Soft', thumb: 'linear-gradient(135deg,#e0e7ff,#c7d2fe,#ddd6fe)', style: { background: 'linear-gradient(135deg,#e0e7ff,#c7d2fe,#ddd6fe)' } },
       { id: 'mystic-2', label: 'Lavender', thumb: 'linear-gradient(135deg,#ede9fe,#c4b5fd,#a78bfa)', style: { background: 'linear-gradient(135deg,#ede9fe,#c4b5fd,#a78bfa)' } },
-      { id: 'mystic-3', label: 'Haze',     thumb: 'linear-gradient(135deg,#f0f9ff,#bae6fd,#7dd3fc)', style: { background: 'linear-gradient(135deg,#f0f9ff,#bae6fd,#7dd3fc)' } },
-      { id: 'mystic-4', label: 'Rose',     thumb: 'linear-gradient(135deg,#fff1f2,#fecdd3,#fda4af)', style: { background: 'linear-gradient(135deg,#fff1f2,#fecdd3,#fda4af)' } },
+      { id: 'mystic-3', label: 'Haze', thumb: 'linear-gradient(135deg,#f0f9ff,#bae6fd,#7dd3fc)', style: { background: 'linear-gradient(135deg,#f0f9ff,#bae6fd,#7dd3fc)' } },
+      { id: 'mystic-4', label: 'Rose', thumb: 'linear-gradient(135deg,#fff1f2,#fecdd3,#fda4af)', style: { background: 'linear-gradient(135deg,#fff1f2,#fecdd3,#fda4af)' } },
     ],
   },
   {
     label: 'Abstract',
     items: [
-      { id: 'abs-1', label: 'Ember',   thumb: 'linear-gradient(135deg,#dc2626,#ea580c,#ca8a04)', style: { background: 'linear-gradient(135deg,#dc2626,#ea580c,#ca8a04)' } },
-      { id: 'abs-2', label: 'Forest',  thumb: 'linear-gradient(135deg,#065f46,#059669,#34d399)', style: { background: 'linear-gradient(135deg,#065f46,#059669,#34d399)' } },
-      { id: 'abs-3', label: 'Ocean',   thumb: 'linear-gradient(135deg,#0c4a6e,#0284c7,#38bdf8)', style: { background: 'linear-gradient(135deg,#0c4a6e,#0284c7,#38bdf8)' } },
-      { id: 'abs-4', label: 'Slate',   thumb: 'linear-gradient(135deg,#1e293b,#334155,#475569)', style: { background: 'linear-gradient(135deg,#1e293b,#334155,#475569)' } },
+      { id: 'abs-1', label: 'Ember', thumb: 'linear-gradient(135deg,#dc2626,#ea580c,#ca8a04)', style: { background: 'linear-gradient(135deg,#dc2626,#ea580c,#ca8a04)' } },
+      { id: 'abs-2', label: 'Forest', thumb: 'linear-gradient(135deg,#065f46,#059669,#34d399)', style: { background: 'linear-gradient(135deg,#065f46,#059669,#34d399)' } },
+      { id: 'abs-3', label: 'Ocean', thumb: 'linear-gradient(135deg,#0c4a6e,#0284c7,#38bdf8)', style: { background: 'linear-gradient(135deg,#0c4a6e,#0284c7,#38bdf8)' } },
+      { id: 'abs-4', label: 'Slate', thumb: 'linear-gradient(135deg,#1e293b,#334155,#475569)', style: { background: 'linear-gradient(135deg,#1e293b,#334155,#475569)' } },
     ],
   },
   {
     label: 'Radiant',
     items: [
-      { id: 'rad-1', label: 'Solar',   thumb: 'radial-gradient(ellipse at 30% 30%,#fde68a,#f59e0b,#b45309)', style: { background: 'radial-gradient(ellipse at 30% 30%,#fde68a,#f59e0b,#b45309)' } },
-      { id: 'rad-2', label: 'Glow',    thumb: 'radial-gradient(ellipse at 50% 50%,#a78bfa,#7c3aed,#1e1b4b)', style: { background: 'radial-gradient(ellipse at 50% 50%,#a78bfa,#7c3aed,#1e1b4b)' } },
-      { id: 'rad-3', label: 'Frost',   thumb: 'radial-gradient(ellipse at 70% 30%,#e0f2fe,#bae6fd,#0284c7)', style: { background: 'radial-gradient(ellipse at 70% 30%,#e0f2fe,#bae6fd,#0284c7)' } },
-      { id: 'rad-4', label: 'Carbon',  thumb: 'radial-gradient(ellipse at 50% 0%,#27272a,#09090b)', style: { background: 'radial-gradient(ellipse at 50% 0%,#27272a,#09090b)' } },
+      { id: 'rad-1', label: 'Solar', thumb: 'radial-gradient(ellipse at 30% 30%,#fde68a,#f59e0b,#b45309)', style: { background: 'radial-gradient(ellipse at 30% 30%,#fde68a,#f59e0b,#b45309)' } },
+      { id: 'rad-2', label: 'Glow', thumb: 'radial-gradient(ellipse at 50% 50%,#a78bfa,#7c3aed,#1e1b4b)', style: { background: 'radial-gradient(ellipse at 50% 50%,#a78bfa,#7c3aed,#1e1b4b)' } },
+      { id: 'rad-3', label: 'Frost', thumb: 'radial-gradient(ellipse at 70% 30%,#e0f2fe,#bae6fd,#0284c7)', style: { background: 'radial-gradient(ellipse at 70% 30%,#e0f2fe,#bae6fd,#0284c7)' } },
+      { id: 'rad-4', label: 'Carbon', thumb: 'radial-gradient(ellipse at 50% 0%,#27272a,#09090b)', style: { background: 'radial-gradient(ellipse at 50% 0%,#27272a,#09090b)' } },
     ],
   },
   {
     label: 'Dark',
     items: [
-      { id: 'dark-1', label: 'Pure',   thumb: '#09090b', style: { background: '#09090b' } },
-      { id: 'dark-2', label: 'Zinc',   thumb: 'linear-gradient(180deg,#18181b,#09090b)', style: { background: 'linear-gradient(180deg,#18181b,#09090b)' } },
+      { id: 'dark-1', label: 'Pure', thumb: '#09090b', style: { background: '#09090b' } },
+      { id: 'dark-2', label: 'Zinc', thumb: 'linear-gradient(180deg,#18181b,#09090b)', style: { background: 'linear-gradient(180deg,#18181b,#09090b)' } },
       { id: 'dark-3', label: 'Indigo', thumb: 'linear-gradient(135deg,#1e1b4b,#0f0c29)', style: { background: 'linear-gradient(135deg,#1e1b4b,#0f0c29)' } },
-      { id: 'dark-4', label: 'Green',  thumb: 'linear-gradient(135deg,#052e16,#14532d)', style: { background: 'linear-gradient(135deg,#052e16,#14532d)' } },
+      { id: 'dark-4', label: 'Green', thumb: 'linear-gradient(135deg,#052e16,#14532d)', style: { background: 'linear-gradient(135deg,#052e16,#14532d)' } },
     ],
   },
 ];
@@ -157,14 +157,14 @@ interface LayoutPreset {
 }
 
 const LAYOUT_PRESETS: LayoutPreset[] = [
-  { id: 'centered',  label: 'Centered',  zoom: 72, posX: 0,    posY: 0,    tiltX: 0,   tiltY: 0,    shadow: 40, bgId: 'cosmic-1' },
-  { id: 'hero',      label: 'Hero',      zoom: 88, posX: 0,    posY: 6,    tiltX: 0,   tiltY: 0,    shadow: 55, bgId: 'cosmic-2' },
-  { id: 'corner',    label: 'Corner',    zoom: 78, posX: -18,  posY: 12,   tiltX: 4,   tiltY: 8,    shadow: 60, bgId: 'abs-1'    },
-  { id: 'floating',  label: 'Floating',  zoom: 68, posX: 0,    posY: -8,   tiltX: 6,   tiltY: 0,    shadow: 80, bgId: 'rad-2'    },
-  { id: 'minimal',   label: 'Minimal',   zoom: 60, posX: 0,    posY: 0,    tiltX: 0,   tiltY: 0,    shadow: 18, bgId: 'dark-1'   },
-  { id: 'dramatic',  label: 'Dramatic',  zoom: 74, posX: 10,   posY: 5,    tiltX: 8,   tiltY: -10,  shadow: 72, bgId: 'cosmic-3' },
-  { id: 'showcase',  label: 'Showcase',  zoom: 78, posX: 16,   posY: 0,    tiltX: 4,   tiltY: -8,   shadow: 62, bgId: 'cosmic-1' },
-  { id: 'split',     label: 'Split',     zoom: 66, posX: 0,    posY: 0,    tiltX: 0,   tiltY: 0,    shadow: 48, bgId: 'abs-3'    },
+  { id: 'centered', label: 'Centered', zoom: 72, posX: 0, posY: 0, tiltX: 0, tiltY: 0, shadow: 40, bgId: 'cosmic-1' },
+  { id: 'hero', label: 'Hero', zoom: 88, posX: 0, posY: 6, tiltX: 0, tiltY: 0, shadow: 55, bgId: 'cosmic-2' },
+  { id: 'corner', label: 'Corner', zoom: 78, posX: -18, posY: 12, tiltX: 4, tiltY: 8, shadow: 60, bgId: 'abs-1' },
+  { id: 'floating', label: 'Floating', zoom: 68, posX: 0, posY: -8, tiltX: 6, tiltY: 0, shadow: 80, bgId: 'rad-2' },
+  { id: 'minimal', label: 'Minimal', zoom: 60, posX: 0, posY: 0, tiltX: 0, tiltY: 0, shadow: 18, bgId: 'dark-1' },
+  { id: 'dramatic', label: 'Dramatic', zoom: 74, posX: 10, posY: 5, tiltX: 8, tiltY: -10, shadow: 72, bgId: 'cosmic-3' },
+  { id: 'showcase', label: 'Showcase', zoom: 78, posX: 16, posY: 0, tiltX: 4, tiltY: -8, shadow: 62, bgId: 'cosmic-1' },
+  { id: 'split', label: 'Split', zoom: 66, posX: 0, posY: 0, tiltX: 0, tiltY: 0, shadow: 48, bgId: 'abs-3' },
 ];
 
 /* SVG diagrams for preset thumbnails */
@@ -173,26 +173,26 @@ const PresetDiagram = ({ id }: { id: string }) => {
   const dim = '#3f3f46';
   const phone = (x: number, y: number, w: number, h: number, opacity = 1) => (
     <g opacity={opacity}>
-      <rect x={x} y={y} width={w} height={h} rx="2" fill="none" stroke={ph} strokeWidth="1.2"/>
-      <rect x={x + w * 0.3} y={y - 0.8} width={w * 0.4} height="1.5" rx="0.75" fill={dim}/>
+      <rect x={x} y={y} width={w} height={h} rx="2" fill="none" stroke={ph} strokeWidth="1.2" />
+      <rect x={x + w * 0.3} y={y - 0.8} width={w * 0.4} height="1.5" rx="0.75" fill={dim} />
     </g>
   );
 
   const diagrams: Record<string, React.ReactNode> = {
-    centered:  <>{phone(17, 8, 14, 22)}</>,
-    hero:      <>{phone(13, 4, 22, 34)}</>,
-    corner:    <>{phone(4,  14, 14, 22)}</>,
-    floating:  <>{phone(17, 6, 14, 22)}<rect x="10" y="30" width="28" height="2" rx="1" fill={ph} opacity=".25"/></>,
-    minimal:   <>{phone(19, 12, 10, 16)}</>,
-    dramatic:  <g transform="rotate(-6 24 24)">{phone(15, 8, 14, 22)}</g>,
-    showcase:  <>{phone(20, 8, 13, 21)}{phone(10, 12, 11, 18, 0.4)}</>,
-    split:     <>{phone(7,  10, 12, 20)}{phone(23, 10, 12, 20)}</>,
+    centered: <>{phone(17, 8, 14, 22)}</>,
+    hero: <>{phone(13, 4, 22, 34)}</>,
+    corner: <>{phone(4, 14, 14, 22)}</>,
+    floating: <>{phone(17, 6, 14, 22)}<rect x="10" y="30" width="28" height="2" rx="1" fill={ph} opacity=".25" /></>,
+    minimal: <>{phone(19, 12, 10, 16)}</>,
+    dramatic: <g transform="rotate(-6 24 24)">{phone(15, 8, 14, 22)}</g>,
+    showcase: <>{phone(20, 8, 13, 21)}{phone(10, 12, 11, 18, 0.4)}</>,
+    split: <>{phone(7, 10, 12, 20)}{phone(23, 10, 12, 20)}</>,
   };
 
   return (
     <svg viewBox="0 0 48 44" fill="none" xmlns="http://www.w3.org/2000/svg"
       style={{ width: '100%', height: '100%' }}>
-      <rect width="48" height="44" fill="rgba(255,255,255,0.03)"/>
+      <rect width="48" height="44" fill="rgba(255,255,255,0.03)" />
       {diagrams[id] ?? diagrams.centered}
     </svg>
   );
@@ -202,20 +202,20 @@ const PresetDiagram = ({ id }: { id: string }) => {
    CONSTANTS
 ══════════════════════════════════════════════ */
 const FRAME_COLORS: { value: FrameColor; label: string; color: string }[] = [
-  { value: 'spaceBlack',      label: 'Space Black',      color: '#151516' },
-  { value: 'spaceGray',       label: 'Space Gray',       color: '#53565a' },
-  { value: 'silver',          label: 'Silver',           color: '#e5e7eb' },
-  { value: 'midnight',        label: 'Midnight',         color: '#1e293b' },
-  { value: 'starlight',       label: 'Starlight',        color: '#e2dcd0' },
+  { value: 'spaceBlack', label: 'Space Black', color: '#151516' },
+  { value: 'spaceGray', label: 'Space Gray', color: '#53565a' },
+  { value: 'silver', label: 'Silver', color: '#e5e7eb' },
+  { value: 'midnight', label: 'Midnight', color: '#1e293b' },
+  { value: 'starlight', label: 'Starlight', color: '#e2dcd0' },
   { value: 'naturalTitanium', label: 'Natural Titanium', color: '#a8a297' },
-  { value: 'titaniumBlue',    label: 'Titanium Blue',    color: '#374754' },
-  { value: 'gold',            label: 'Gold',             color: '#e5c199' },
+  { value: 'titaniumBlue', label: 'Titanium Blue', color: '#374754' },
+  { value: 'gold', label: 'Gold', color: '#e5c199' },
 ];
 
 const EXPORT_MODES: { id: ExportMode; label: string; icon: React.ReactNode }[] = [
-  { id: 'full',   label: 'Full Canvas', icon: <Maximize2 size={11}/> },
-  { id: 'device', label: 'Device Only', icon: <Smartphone size={11}/> },
-  { id: 'tight',  label: 'Tight Crop',  icon: <Crop size={11}/> },
+  { id: 'full', label: 'Full Canvas', icon: <Maximize2 size={11} /> },
+  { id: 'device', label: 'Device Only', icon: <Smartphone size={11} /> },
+  { id: 'tight', label: 'Tight Crop', icon: <Crop size={11} /> },
 ];
 
 /* ══════════════════════════════════════════════
@@ -225,15 +225,15 @@ const UploadPlaceholder = () => (
   <div className={s.shotsPlaceholder}>
     <div className={s.mediaStack}>
       <svg className={s.mediaIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <rect x="3" y="3" width="18" height="18" rx="3"/>
-        <circle cx="8.5" cy="8.5" r="1.5"/>
-        <path d="M21 15l-5-5L5 21"/>
+        <rect x="3" y="3" width="18" height="18" rx="3" />
+        <circle cx="8.5" cy="8.5" r="1.5" />
+        <path d="M21 15l-5-5L5 21" />
       </svg>
       <div className={s.plusCircle}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"
           style={{ width: 9, height: 9, color: '#000' }}>
-          <line x1="12" y1="5" x2="12" y2="19"/>
-          <line x1="5" y1="12" x2="19" y2="12"/>
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <line x1="5" y1="12" x2="19" y2="12" />
         </svg>
       </div>
     </div>
@@ -248,28 +248,29 @@ const UploadPlaceholder = () => (
 export default function MockupStudioPage() {
 
   /* Images */
-  const [image,  setImage]  = useState<string | null>(null);
+  const [image, setImage] = useState<string | null>(null);
   const [image2, setImage2] = useState<string | null>(null);
   const [activeSlot, setActiveSlot] = useState<1 | 2>(1);
 
   /* Device */
-  const [device,     setDevice]     = useState<DeviceModel>('iphone-17-pro');
+  const [device, setDevice] = useState<DeviceModel>('iphone-17-pro');
   const [frameColor, setFrameColor] = useState<FrameColor>('spaceBlack');
-  const [screens,    setScreens]    = useState<1 | 2>(1);
-  const [dualLayout, setDualLayout] = useState<'offset' | 'side' | 'stack'>('offset');
+  const [screens, setScreens] = useState<1 | 2>(1);
+  const [dualLayout, setDualLayout] = useState<'offset' | 'side' | 'angled-out' | 'angled-in' | 'stack' | 'overlap'>('offset');
 
   /* Camera — zoom + position + tilt */
   const [activePreset, setActivePreset] = useState<string | null>('centered');
-  const [zoom,   setZoom]   = useState(72);
-  const [posX,   setPosX]   = useState(0);   // percent of canvas width
-  const [posY,   setPosY]   = useState(0);   // percent of canvas height
-  const [tiltX,  setTiltX]  = useState(0);
-  const [tiltY,  setTiltY]  = useState(0);
+  const [zoom, setZoom] = useState(72);
+  const [posX, setPosX] = useState(0);   // percent of canvas width
+  const [posY, setPosY] = useState(0);   // percent of canvas height
+  const [tiltX, setTiltX] = useState(0);
+  const [tiltY, setTiltY] = useState(0);
   const [shadow, setShadow] = useState(40);
 
   /* Camera UI */
-  const [cameraTab,  setCameraTab]  = useState<'zoom' | 'tilt'>('zoom');
-  const [precision,  setPrecision]  = useState(false);
+  const [cameraTab, setCameraTab] = useState<'zoom' | 'tilt'>('zoom');
+  const [precision, setPrecision] = useState(false);
+  const isDraggingZoomRef = useRef(false);
 
   /* Background */
   const [bg, setBg] = useState<BgOption>(DEFAULT_BG);
@@ -278,7 +279,7 @@ export default function MockupStudioPage() {
   const [textLayers, setTextLayers] = useState<TextLayer[]>([]);
   const [activeLayerId, setActiveLayerId] = useState<string | null>(null);
   const [editingLayerId, setEditingLayerId] = useState<string | null>(null);
-  const [canvasFormat, setCanvasFormat] = useState<'16:9'|'9:16'|'1:1'|'4:3'|'5:3'>('16:9');
+  const [canvasFormat, setCanvasFormat] = useState<'16:9' | '9:16' | '1:1' | '4:3' | '5:3'>('16:9');
 
   /* Browser specific */
   const [browserVariant, setBrowserVariant] = useState<BrowserVariant>('safari-light');
@@ -286,12 +287,12 @@ export default function MockupStudioPage() {
   const [browserUrl, setBrowserUrl] = useState('');
 
   /* Export */
-  const [exportRes,  setExportRes]  = useState<'1' | '2' | '3'>('2');
+  const [exportRes, setExportRes] = useState<'1' | '2' | '3'>('2');
   const [exportMode, setExportMode] = useState<ExportMode>('full');
   const [showExport, setShowExport] = useState(false);
 
-  const canvasBgRef  = useRef<HTMLDivElement>(null);
-  const deviceRef    = useRef<HTMLDivElement>(null);
+  const canvasBgRef = useRef<HTMLDivElement>(null);
+  const deviceRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const resizeLayerRef = useRef<string | null>(null);
   const resizeStartRef = useRef<{ mx: number; w: number } | null>(null);
@@ -440,8 +441,8 @@ export default function MockupStudioPage() {
   const handleExport = useCallback(async () => {
     const target =
       exportMode === 'device' ? deviceRef.current :
-      exportMode === 'tight'  ? deviceRef.current :
-      canvasBgRef.current;
+        exportMode === 'tight' ? deviceRef.current :
+          canvasBgRef.current;
     if (!target) return;
     addToast('Generating...', 'info');
     try {
@@ -491,7 +492,7 @@ export default function MockupStudioPage() {
   // The wrapper sits at canvas center (top:50% left:50%), width/height auto.
   // translate(-50%,-50%) centers on the device's own bounding box.
   // posX/posY (-45..+45) map to ±30% of the canvas via a CSS var we inject.
-  const canvasW = canvasBgRef.current?.offsetWidth  ?? 800;
+  const canvasW = canvasBgRef.current?.offsetWidth ?? 800;
   const canvasH = canvasBgRef.current?.offsetHeight ?? 450;
   const formatRatios: Record<string, string> = {
     '16:9': '16/9',
@@ -529,14 +530,14 @@ export default function MockupStudioPage() {
   const inspector = (
     <div className={s.controlsContainer}>
       <input type="file" accept="image/*" ref={fileInputRef}
-        onChange={handleFileChange} style={{ display: 'none' }}/>
+        onChange={handleFileChange} style={{ display: 'none' }} />
 
       {/* Text Layers */}
       <div className={s.section}>
         {/* Header */}
         <div className={s.sectionLabel} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span className={s.sectionLabelDot}/>
+            <span className={s.sectionLabelDot} />
             Text Layers
             {textLayers.length > 0 && (
               <span style={{ background: 'rgba(168,85,247,0.2)', color: '#c084fc', borderRadius: 99, padding: '1px 6px', fontSize: '0.5rem', fontWeight: 700 }}>{textLayers.length}</span>
@@ -544,7 +545,7 @@ export default function MockupStudioPage() {
           </div>
           <div ref={textMenuContainerRef} style={{ position: 'relative' }}>
             <button className={s.addTextBtn} onClick={() => setShowTextBlockMenu(v => !v)}>
-              <Plus size={10} style={{ display: 'inline', marginRight: 2 }}/>
+              <Plus size={10} style={{ display: 'inline', marginRight: 2 }} />
               Add Text
             </button>
             {showTextBlockMenu && (
@@ -592,8 +593,8 @@ export default function MockupStudioPage() {
                     const id = `text-${Date.now()}`;
                     setTextLayers(prev => [...prev, { ...al, id, x: al.x + 2, y: al.y + 2, zIndex: prev.length + 1 }]);
                     setActiveLayerId(id);
-                  }}><Layers size={11}/></button>
-                  <button className={s.textDeleteBtn} onClick={() => deleteTextLayer(al.id)}><Trash2 size={11}/></button>
+                  }}><Layers size={11} /></button>
+                  <button className={s.textDeleteBtn} onClick={() => deleteTextLayer(al.id)}><Trash2 size={11} /></button>
                 </div>
               </div>
 
@@ -630,35 +631,35 @@ export default function MockupStudioPage() {
                     <span className={s.sliderName}>Size</span>
                     <span className={s.sliderVal}>{al.fontSize}px</span>
                   </div>
-                  <input type="range" className={s.slider} min={10} max={140} value={al.fontSize} onChange={e => updateTextLayer(al.id, { fontSize: +e.target.value })}/>
+                  <input type="range" className={s.slider} min={10} max={140} value={al.fontSize} onChange={e => updateTextLayer(al.id, { fontSize: +e.target.value })} />
                 </div>
                 <div className={s.cameraRow}>
                   <div className={s.sliderMeta}>
                     <span className={s.sliderName}>Weight</span>
                     <span className={s.sliderVal}>{al.fontWeight}</span>
                   </div>
-                  <input type="range" className={s.slider} min={100} max={900} step={100} value={al.fontWeight} onChange={e => updateTextLayer(al.id, { fontWeight: +e.target.value })}/>
+                  <input type="range" className={s.slider} min={100} max={900} step={100} value={al.fontWeight} onChange={e => updateTextLayer(al.id, { fontWeight: +e.target.value })} />
                 </div>
                 <div className={s.cameraRow}>
                   <div className={s.sliderMeta}>
                     <span className={s.sliderName}>Spacing</span>
                     <span className={s.sliderVal}>{al.letterSpacing}px</span>
                   </div>
-                  <input type="range" className={s.slider} min={-5} max={10} step={0.5} value={al.letterSpacing} onChange={e => updateTextLayer(al.id, { letterSpacing: +e.target.value })}/>
+                  <input type="range" className={s.slider} min={-5} max={10} step={0.5} value={al.letterSpacing} onChange={e => updateTextLayer(al.id, { letterSpacing: +e.target.value })} />
                 </div>
                 <div className={s.cameraRow}>
                   <div className={s.sliderMeta}>
                     <span className={s.sliderName}>Line Height</span>
                     <span className={s.sliderVal}>{al.lineHeight}</span>
                   </div>
-                  <input type="range" className={s.slider} min={0.7} max={2.5} step={0.05} value={al.lineHeight} onChange={e => updateTextLayer(al.id, { lineHeight: +e.target.value })}/>
+                  <input type="range" className={s.slider} min={0.7} max={2.5} step={0.05} value={al.lineHeight} onChange={e => updateTextLayer(al.id, { lineHeight: +e.target.value })} />
                 </div>
                 {/* Align */}
                 <div style={{ display: 'flex', gap: 4 }}>
-                  {(['left','center','right'] as const).map(a => (
+                  {(['left', 'center', 'right'] as const).map(a => (
                     <button key={a} style={{ flex: 1, padding: '4px 0', borderRadius: 5, border: 'none', cursor: 'pointer', background: al.align === a ? 'rgba(168,85,247,0.18)' : 'rgba(255,255,255,0.04)', color: al.align === a ? '#d8b4fe' : '#52525b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                       onClick={() => updateTextLayer(al.id, { align: a })}>
-                      {a === 'left' ? <AlignLeft size={11}/> : a === 'center' ? <AlignCenter size={11}/> : <AlignRight size={11}/>}
+                      {a === 'left' ? <AlignLeft size={11} /> : a === 'center' ? <AlignCenter size={11} /> : <AlignRight size={11} />}
                     </button>
                   ))}
                 </div>
@@ -691,9 +692,9 @@ export default function MockupStudioPage() {
                 {/* Gradient colors if enabled */}
                 {al.gradient && (
                   <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                    <input type="color" value={al.gradientFrom ?? '#a855f7'} onChange={e => updateTextLayer(al.id, { gradientFrom: e.target.value })} style={{ width: 24, height: 24, border: 'none', background: 'none', cursor: 'pointer', borderRadius: 4, padding: 0 }}/>
+                    <input type="color" value={al.gradientFrom ?? '#a855f7'} onChange={e => updateTextLayer(al.id, { gradientFrom: e.target.value })} style={{ width: 24, height: 24, border: 'none', background: 'none', cursor: 'pointer', borderRadius: 4, padding: 0 }} />
                     <span style={{ fontSize: '0.55rem', color: '#52525b' }}>→</span>
-                    <input type="color" value={al.gradientTo ?? '#6366f1'} onChange={e => updateTextLayer(al.id, { gradientTo: e.target.value })} style={{ width: 24, height: 24, border: 'none', background: 'none', cursor: 'pointer', borderRadius: 4, padding: 0 }}/>
+                    <input type="color" value={al.gradientTo ?? '#6366f1'} onChange={e => updateTextLayer(al.id, { gradientTo: e.target.value })} style={{ width: 24, height: 24, border: 'none', background: 'none', cursor: 'pointer', borderRadius: 4, padding: 0 }} />
                   </div>
                 )}
                 <div className={s.cameraRow}>
@@ -701,14 +702,14 @@ export default function MockupStudioPage() {
                     <span className={s.sliderName}>Opacity</span>
                     <span className={s.sliderVal}>{Math.round(al.opacity * 100)}%</span>
                   </div>
-                  <input type="range" className={s.slider} min={0} max={1} step={0.01} value={al.opacity} onChange={e => updateTextLayer(al.id, { opacity: +e.target.value })}/>
+                  <input type="range" className={s.slider} min={0} max={1} step={0.01} value={al.opacity} onChange={e => updateTextLayer(al.id, { opacity: +e.target.value })} />
                 </div>
                 <div className={s.cameraRow}>
                   <div className={s.sliderMeta}>
                     <span className={s.sliderName}>Glow</span>
                     <span className={s.sliderVal}>{al.glow}</span>
                   </div>
-                  <input type="range" className={s.slider} min={0} max={60} value={al.glow} onChange={e => updateTextLayer(al.id, { glow: +e.target.value })}/>
+                  <input type="range" className={s.slider} min={0} max={60} value={al.glow} onChange={e => updateTextLayer(al.id, { glow: +e.target.value })} />
                 </div>
                 <div style={{ display: 'flex', gap: 6 }}>
                   <button onClick={() => updateTextLayer(al.id, { shadow: !al.shadow })} style={{ flex: 1, padding: '4px 0', borderRadius: 5, border: 'none', cursor: 'pointer', background: al.shadow ? 'rgba(168,85,247,0.18)' : 'rgba(255,255,255,0.04)', color: al.shadow ? '#d8b4fe' : '#52525b', fontSize: '0.6rem', fontWeight: 600 }}>Shadow</button>
@@ -724,32 +725,32 @@ export default function MockupStudioPage() {
                     <span className={s.sliderName}>X</span>
                     <span className={s.sliderVal}>{Math.round(al.x)}%</span>
                   </div>
-                  <input type="range" className={s.slider} min={-80} max={80} step={0.5} value={al.x} onChange={e => updateTextLayer(al.id, { x: +e.target.value })}/>
+                  <input type="range" className={s.slider} min={-80} max={80} step={0.5} value={al.x} onChange={e => updateTextLayer(al.id, { x: +e.target.value })} />
                 </div>
                 <div className={s.cameraRow}>
                   <div className={s.sliderMeta}>
                     <span className={s.sliderName}>Y</span>
                     <span className={s.sliderVal}>{Math.round(al.y)}%</span>
                   </div>
-                  <input type="range" className={s.slider} min={-80} max={80} step={0.5} value={al.y} onChange={e => updateTextLayer(al.id, { y: +e.target.value })}/>
+                  <input type="range" className={s.slider} min={-80} max={80} step={0.5} value={al.y} onChange={e => updateTextLayer(al.id, { y: +e.target.value })} />
                 </div>
                 <div className={s.cameraRow}>
                   <div className={s.sliderMeta}>
                     <span className={s.sliderName}>Width</span>
                     <span className={s.sliderVal}>{al.width ?? 700}px</span>
                   </div>
-                  <input type="range" className={s.slider} min={100} max={1200} step={10} value={al.width ?? 700} onChange={e => updateTextLayer(al.id, { width: +e.target.value })}/>
+                  <input type="range" className={s.slider} min={100} max={1200} step={10} value={al.width ?? 700} onChange={e => updateTextLayer(al.id, { width: +e.target.value })} />
                 </div>
                 <div className={s.cameraRow}>
                   <div className={s.sliderMeta}>
                     <span className={s.sliderName}>Rotation</span>
                     <span className={s.sliderVal}>{al.rotation ?? 0}°</span>
                   </div>
-                  <input type="range" className={s.slider} min={-45} max={45} step={1} value={al.rotation ?? 0} onChange={e => updateTextLayer(al.id, { rotation: +e.target.value })}/>
+                  <input type="range" className={s.slider} min={-45} max={45} step={1} value={al.rotation ?? 0} onChange={e => updateTextLayer(al.id, { rotation: +e.target.value })} />
                 </div>
                 <button style={{ width: '100%', padding: '4px', borderRadius: 5, border: '1px solid rgba(255,255,255,0.06)', cursor: 'pointer', background: 'rgba(255,255,255,0.02)', color: '#52525b', fontSize: '0.6rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
                   onClick={() => updateTextLayer(al.id, { x: 0, y: 0, rotation: 0 })}>
-                  <RotateCcw size={10}/> Reset Position
+                  <RotateCcw size={10} /> Reset Position
                 </button>
               </div>
             </div>
@@ -757,37 +758,25 @@ export default function MockupStudioPage() {
         })()}
       </div>
 
-      {/* Beautify */}
+      {/* Layout Presets */}
+      {/* Canvas Format */}
       <div className={s.section}>
-        <button className={s.beautifyBtn} onClick={handleBeautify}>
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8"
-            style={{ width: 13, height: 13 }}>
-            <path d="M8 1l1.5 4.5L14 7l-4.5 1.5L8 13l-1.5-4.5L2 7l4.5-1.5z"/>
-          </svg>
-          Beautify
-          <span className={s.glowBadge}>Auto</span>
-        </button>
+        <div className={s.sectionLabel}>Format</div>
+        <select
+          value={canvasFormat}
+          onChange={e => setCanvasFormat(e.target.value as any)}
+          className={s.formatSelect}
+        >
+          <option value="16:9">16:9 (Default)</option>
+          <option value="9:16">9:16 (Story)</option>
+          <option value="1:1">1:1 (Square)</option>
+          <option value="4:3">4:3</option>
+          <option value="5:3">5:3 (Product Hunt)</option>
+        </select>
       </div>
-
-          {/* Layout Presets */}
-          {/* Canvas Format */}
-          <div className={s.section}>
-            <div className={s.sectionLabel}>Format</div>
-                      <select
-            value={canvasFormat}
-            onChange={e => setCanvasFormat(e.target.value as any)}
-            className={s.formatSelect}
-          >
-            <option value="16:9">16:9 (Default)</option>
-            <option value="9:16">9:16 (Story)</option>
-            <option value="1:1">1:1 (Square)</option>
-            <option value="4:3">4:3</option>
-            <option value="5:3">5:3 (Product Hunt)</option>
-          </select>
-          </div>
       <div className={s.section}>
         <div className={s.sectionLabel}>
-          <span className={s.sectionLabelDot}/>
+          <span className={s.sectionLabelDot} />
           Layout Presets
         </div>
         <div className={s.presetGrid}>
@@ -799,7 +788,7 @@ export default function MockupStudioPage() {
               title={p.label}
             >
               <div className={s.layoutPresetThumb}>
-                <PresetDiagram id={p.id}/>
+                <PresetDiagram id={p.id} />
               </div>
               <span className={s.layoutPresetLabel}>{p.label}</span>
             </button>
@@ -829,11 +818,11 @@ export default function MockupStudioPage() {
           >
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"
               style={{ width: 9, height: 9 }}>
-              <circle cx="8" cy="8" r="5.5"/>
-              <line x1="8" y1="1" x2="8" y2="4"/>
-              <line x1="8" y1="12" x2="8" y2="15"/>
-              <line x1="1" y1="8" x2="4" y2="8"/>
-              <line x1="12" y1="8" x2="15" y2="8"/>
+              <circle cx="8" cy="8" r="5.5" />
+              <line x1="8" y1="1" x2="8" y2="4" />
+              <line x1="8" y1="12" x2="8" y2="15" />
+              <line x1="1" y1="8" x2="4" y2="8" />
+              <line x1="12" y1="8" x2="15" y2="8" />
             </svg>
             Precision
           </button>
@@ -847,22 +836,31 @@ export default function MockupStudioPage() {
             <div
               className={s.zoomDragArea}
               onPointerDown={e => {
+                isDraggingZoomRef.current = true;
                 e.currentTarget.setPointerCapture(e.pointerId);
                 const rect = e.currentTarget.getBoundingClientRect();
-                const updatePos = (clientX: number, clientY: number) => {
-                  const pctX = ((clientX - rect.left) / rect.width) * 100;
-                  const pctY = ((clientY - rect.top) / rect.height) * 100;
-                  setPosX(Math.round(Math.max(-45, Math.min(45, (pctX - 50) * 0.9))));
-                  setPosY(Math.round(Math.max(-45, Math.min(45, (pctY - 50) * 0.9))));
-                  setActivePreset(null);
-                };
-                updatePos(e.clientX, e.clientY);
-                e.currentTarget.onpointermove = ev => updatePos(ev.clientX, ev.clientY);
-                e.currentTarget.onpointerup = () => {
-                  e.currentTarget.onpointermove = null;
-                  e.currentTarget.onpointerup = null;
-                  e.currentTarget.releasePointerCapture(e.pointerId);
-                };
+                const pctX = ((e.clientX - rect.left) / rect.width) * 100;
+                const pctY = ((e.clientY - rect.top) / rect.height) * 100;
+                setPosX(Math.round(Math.max(-45, Math.min(45, (pctX - 50) * 0.9))));
+                setPosY(Math.round(Math.max(-45, Math.min(45, (pctY - 50) * 0.9))));
+                setActivePreset(null);
+              }}
+              onPointerMove={e => {
+                if (!isDraggingZoomRef.current) return;
+                const rect = e.currentTarget.getBoundingClientRect();
+                const pctX = ((e.clientX - rect.left) / rect.width) * 100;
+                const pctY = ((e.clientY - rect.top) / rect.height) * 100;
+                setPosX(Math.round(Math.max(-45, Math.min(45, (pctX - 50) * 0.9))));
+                setPosY(Math.round(Math.max(-45, Math.min(45, (pctY - 50) * 0.9))));
+                setActivePreset(null);
+              }}
+              onPointerUp={e => {
+                isDraggingZoomRef.current = false;
+                e.currentTarget.releasePointerCapture(e.pointerId);
+              }}
+              onPointerCancel={e => {
+                isDraggingZoomRef.current = false;
+                e.currentTarget.releasePointerCapture(e.pointerId);
               }}
             >
               <div
@@ -909,7 +907,7 @@ export default function MockupStudioPage() {
               </div>
               <input type="range" className={s.slider}
                 min={-15} max={15} value={tiltX}
-                onChange={e => { setTiltX(+e.target.value); setActivePreset(null); }}/>
+                onChange={e => { setTiltX(+e.target.value); setActivePreset(null); }} />
             </div>
             <div className={s.cameraRow}>
               <div className={s.sliderMeta}>
@@ -918,7 +916,7 @@ export default function MockupStudioPage() {
               </div>
               <input type="range" className={s.slider}
                 min={-15} max={15} value={tiltY}
-                onChange={e => { setTiltY(+e.target.value); setActivePreset(null); }}/>
+                onChange={e => { setTiltY(+e.target.value); setActivePreset(null); }} />
             </div>
             <div className={s.cameraRow}>
               <div className={s.sliderMeta}>
@@ -927,7 +925,7 @@ export default function MockupStudioPage() {
               </div>
               <input type="range" className={s.slider}
                 min={0} max={100} value={shadow}
-                onChange={e => { setShadow(+e.target.value); setActivePreset(null); }}/>
+                onChange={e => { setShadow(+e.target.value); setActivePreset(null); }} />
             </div>
           </div>
         )}
@@ -936,17 +934,17 @@ export default function MockupStudioPage() {
       {/* Device */}
       <div className={s.section}>
         <div className={s.sectionLabel}>
-          <span className={s.sectionLabelDot}/>
+          <span className={s.sectionLabelDot} />
           Device
         </div>
-        <DeviceSelector value={device} onChange={setDevice}/>
+        <DeviceSelector value={device} onChange={setDevice} />
       </div>
 
       {/* Browser specific controls */}
       {device === 'browser' && (
         <div className={s.section}>
           <div className={s.sectionLabel}>
-            <span className={s.sectionLabelDot}/>
+            <span className={s.sectionLabelDot} />
             Browser Style
           </div>
           <div className={s.presetGrid}>
@@ -979,7 +977,7 @@ export default function MockupStudioPage() {
       {device.includes('iphone') && (
         <div className={s.section}>
           <div className={s.sectionLabel}>
-            <span className={s.sectionLabelDot}/>
+            <span className={s.sectionLabelDot} />
             Screens
           </div>
           <div className={s.screenCountRow}>
@@ -991,7 +989,7 @@ export default function MockupStudioPage() {
               >
                 <span className={s.screenCountIcon}>
                   {Array.from({ length: n }).map((_, i) => (
-                    <span key={i} className={s.screenCountBar}/>
+                    <span key={i} className={s.screenCountBar} />
                   ))}
                 </span>
                 {n === 1 ? 'Single' : 'Dual'}
@@ -999,12 +997,13 @@ export default function MockupStudioPage() {
             ))}
           </div>
           {screens === 2 && (
-            <div className={s.layoutPills}>
-              {(['offset', 'side', 'stack'] as const).map(l => (
+            <div className={s.layoutPills} style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '4px', marginTop: '8px' }}>
+              {(['offset', 'side', 'angled-out', 'angled-in', 'stack', 'overlap'] as const).map(l => (
                 <button key={l}
                   className={`${s.layoutPill} ${dualLayout === l ? s.layoutPillActive : ''}`}
                   onClick={() => setDualLayout(l)}
-                >{l}</button>
+                  style={{ textTransform: 'capitalize' }}
+                >{l.replace('-', ' ')}</button>
               ))}
             </div>
           )}
@@ -1015,7 +1014,7 @@ export default function MockupStudioPage() {
       {device !== 'none' && device !== 'browser' && (
         <div className={s.section}>
           <div className={s.sectionLabel}>
-            <span className={s.sectionLabelDot}/>
+            <span className={s.sectionLabelDot} />
             Frame Color
           </div>
           <div className={s.colorSelector}>
@@ -1033,7 +1032,7 @@ export default function MockupStudioPage() {
       {/* Background */}
       <div className={s.section}>
         <div className={s.sectionLabel}>
-          <span className={s.sectionLabelDot}/>
+          <span className={s.sectionLabelDot} />
           Background
         </div>
         <div className={s.bgCategories}>
@@ -1059,12 +1058,14 @@ export default function MockupStudioPage() {
       {/* Export */}
       <div className={s.section}>
         <button className={s.exportPanelToggle} onClick={() => setShowExport(v => !v)}>
-          <Download size={11}/>
+          <Download size={11} />
           Export Options
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"
-            style={{ width: 10, height: 10, marginLeft: 'auto',
-              transform: showExport ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }}>
-            <polyline points="4,6 8,10 12,6"/>
+            style={{
+              width: 10, height: 10, marginLeft: 'auto',
+              transform: showExport ? 'rotate(180deg)' : 'none', transition: 'transform .2s'
+            }}>
+            <polyline points="4,6 8,10 12,6" />
           </svg>
         </button>
 
@@ -1084,7 +1085,7 @@ export default function MockupStudioPage() {
             </div>
             <div className={s.sectionLabel} style={{ marginTop: 10, marginBottom: 6 }}>Resolution</div>
             <div className={s.exportResGrid}>
-              {(['1','2','3'] as const).map(r => (
+              {(['1', '2', '3'] as const).map(r => (
                 <button key={r}
                   className={`${s.exportResBtn} ${exportRes === r ? s.exportResBtnActive : ''}`}
                   onClick={() => setExportRes(r)}
@@ -1092,7 +1093,7 @@ export default function MockupStudioPage() {
               ))}
             </div>
             <button className={s.exportExecuteBtn} onClick={handleExport}>
-              <Download size={13}/>
+              <Download size={13} />
               Export PNG
             </button>
           </div>
@@ -1129,12 +1130,20 @@ export default function MockupStudioPage() {
     >
       <DeviceFrame {...frameProps}>
         {image
-          ? <img src={image} alt="" className={s.uploadedImage}/>
-          : <UploadPlaceholder/>
+          ? <img src={image} alt="" className={s.uploadedImage} />
+          : <UploadPlaceholder />
         }
-        <div className={s.deviceUploadOverlay}>
-          <div className={s.deviceUploadOverlayText}>Change Image</div>
-        </div>
+        {image && (
+          <div className={s.deviceUploadOverlay}>
+            <div className={s.deviceUploadIconWrapper}>
+              <ImageIcon size={24} color="#fff" />
+              <div className={s.deviceUploadPlusCircle}>
+                <Plus size={10} color="#000" strokeWidth={4} />
+              </div>
+            </div>
+            <div className={s.deviceUploadOverlayText}>Change Image</div>
+          </div>
+        )}
       </DeviceFrame>
     </div>
   );
@@ -1145,12 +1154,16 @@ export default function MockupStudioPage() {
       {/* Device 1 — slightly smaller, positioned left */}
       <div
         style={{
-          zIndex: dualLayout === 'side' ? 1 : 2,
+          zIndex: (dualLayout === 'side' || dualLayout === 'angled-out' || dualLayout === 'angled-in') ? 1 : 2,
           cursor: 'pointer',
           transform:
             dualLayout === 'offset' ? 'translateX(30px) translateY(30px)' :
-            dualLayout === 'side'   ? 'translateX(-14px)' :
-            'translateY(40px) rotateZ(-4deg)',
+              dualLayout === 'side' ? 'translateX(-14px)' :
+                dualLayout === 'angled-out' ? 'translateX(-30px) translateY(20px) rotateZ(-12deg)' :
+                  dualLayout === 'angled-in' ? 'translateX(-30px) translateY(-10px) rotateZ(12deg)' :
+                    dualLayout === 'stack' ? 'translateY(40px) rotateZ(-4deg)' :
+                      dualLayout === 'overlap' ? 'translateX(60px) translateY(20px)' :
+                        'translateY(40px) rotateZ(-4deg)',
           transition: 'transform 0.35s cubic-bezier(0.4,0,0.2,1)',
         }}
         onClick={() => { setActiveSlot(1); fileInputRef.current?.click(); }}
@@ -1158,21 +1171,33 @@ export default function MockupStudioPage() {
         onDrop={e => handleDrop(e, 1)}
       >
         <DeviceFrame {...frameProps} scale={82}>
-          {image ? <img src={image} alt="" className={s.uploadedImage}/> : <UploadPlaceholder/>}
-          <div className={s.deviceUploadOverlay}>
-            <div className={s.deviceUploadOverlayText}>Change Image</div>
-          </div>
+          {image ? <img src={image} alt="" className={s.uploadedImage} /> : <UploadPlaceholder />}
+          {image && (
+            <div className={s.deviceUploadOverlay}>
+              <div className={s.deviceUploadIconWrapper}>
+                <ImageIcon size={24} color="#fff" />
+                <div className={s.deviceUploadPlusCircle}>
+                  <Plus size={10} color="#000" strokeWidth={4} />
+                </div>
+              </div>
+              <div className={s.deviceUploadOverlayText}>Change Image</div>
+            </div>
+          )}
         </DeviceFrame>
       </div>
       {/* Device 2 — slightly smaller, positioned right */}
       <div
         style={{
-          zIndex: dualLayout === 'side' ? 2 : 1,
+          zIndex: (dualLayout === 'side' || dualLayout === 'angled-out' || dualLayout === 'angled-in') ? 2 : 1,
           cursor: 'pointer',
           transform:
             dualLayout === 'offset' ? 'translateX(-30px) translateY(-30px)' :
-            dualLayout === 'side'   ? 'translateX(14px)' :
-            'translateY(-40px) rotateZ(4deg)',
+              dualLayout === 'side' ? 'translateX(14px)' :
+                dualLayout === 'angled-out' ? 'translateX(30px) translateY(0px) rotateZ(12deg)' :
+                  dualLayout === 'angled-in' ? 'translateX(30px) translateY(30px) rotateZ(-12deg)' :
+                    dualLayout === 'stack' ? 'translateY(-40px) rotateZ(4deg)' :
+                      dualLayout === 'overlap' ? 'translateX(-60px) translateY(-20px)' :
+                        'translateY(-40px) rotateZ(4deg)',
           transition: 'transform 0.35s cubic-bezier(0.4,0,0.2,1)',
         }}
         onClick={() => { setActiveSlot(2); fileInputRef.current?.click(); }}
@@ -1180,10 +1205,18 @@ export default function MockupStudioPage() {
         onDrop={e => handleDrop(e, 2)}
       >
         <DeviceFrame {...frameProps} scale={82}>
-          {image2 ? <img src={image2} alt="" className={s.uploadedImage}/> : <UploadPlaceholder/>}
-          <div className={s.deviceUploadOverlay}>
-            <div className={s.deviceUploadOverlayText}>Change Image</div>
-          </div>
+          {image2 ? <img src={image2} alt="" className={s.uploadedImage} /> : <UploadPlaceholder />}
+          {image2 && (
+            <div className={s.deviceUploadOverlay}>
+              <div className={s.deviceUploadIconWrapper}>
+                <ImageIcon size={24} color="#fff" />
+                <div className={s.deviceUploadPlusCircle}>
+                  <Plus size={10} color="#000" strokeWidth={4} />
+                </div>
+              </div>
+              <div className={s.deviceUploadOverlayText}>Change Image</div>
+            </div>
+          )}
         </DeviceFrame>
       </div>
     </div>
@@ -1204,8 +1237,8 @@ export default function MockupStudioPage() {
           </div>
 
           {/* Snap guides */}
-          {snapGuides.h && <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: 1, background: 'rgba(168,85,247,0.5)', pointerEvents: 'none', zIndex: 50 }}/>}
-          {snapGuides.v && <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: 1, background: 'rgba(168,85,247,0.5)', pointerEvents: 'none', zIndex: 50 }}/>}
+          {snapGuides.h && <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: 1, background: 'rgba(168,85,247,0.5)', pointerEvents: 'none', zIndex: 50 }} />}
+          {snapGuides.v && <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: 1, background: 'rgba(168,85,247,0.5)', pointerEvents: 'none', zIndex: 50 }} />}
 
           {/* Text Layers */}
           {textLayers.map(layer => {
@@ -1214,7 +1247,7 @@ export default function MockupStudioPage() {
             const tyPx = (layer.y / 100) * canvasH;
             const isGradient = layer.gradient;
             const gradFrom = layer.gradientFrom ?? '#a855f7';
-            const gradTo   = layer.gradientTo   ?? '#6366f1';
+            const gradTo = layer.gradientTo ?? '#6366f1';
             const isExporting = exportMode === 'device' || exportMode === 'tight';
             return (
               <div
@@ -1312,12 +1345,12 @@ export default function MockupStudioPage() {
       icon={Monitor}
       actions={
         <button className={s.exportBtn} onClick={handleExport}>
-          <Download style={{ width: 13, height: 13 }}/>
+          <Download style={{ width: 13, height: 13 }} />
           Export {exportRes}x PNG
         </button>
       }
     >
-      <SplitPanel leftLabel="Inspector" rightLabel="Canvas" left={inspector} right={canvas}/>
+      <SplitPanel leftLabel="Inspector" rightLabel="Canvas" left={inspector} right={canvas} />
     </ToolLayout>
   );
 }
