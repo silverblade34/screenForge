@@ -179,6 +179,10 @@ export interface TextLayer {
   locked?: boolean;
   hidden?: boolean;
   zIndex: number;
+
+  startTime?: number;
+  duration?: number;
+  animationIn?: 'none' | 'fade' | 'typewriter' | 'bounce' | 'slide-up';
 }
 
 export const FONT_PRESETS = [

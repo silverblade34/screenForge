@@ -324,6 +324,11 @@ export default function CinematicStudioPage() {
 
   const addTextBlock = (block: typeof TEXT_BLOCKS[0]) => {
     const id = `text-${Date.now()}`;
+    const totalSceneDur = scenes.reduce((sum, sc) => sum + sc.duration, 0);
+    // Clamp duration so it doesn't exceed total animation duration
+    const maxDur = Math.max(1, totalSceneDur - currentTime);
+    const dur = Math.min(3, maxDur);
+
     const newLayer: TextLayer = {
       id, type: block.type, text: block.text,
       x: 50, y: 50, width: 700, align: 'center',
@@ -333,6 +338,9 @@ export default function CinematicStudioPage() {
       color: block.color, opacity: 1, glow: 0,
       gradient: block.gradient ?? false, gradientFrom: '#a855f7', gradientTo: '#6366f1',
       shadow: false, zIndex: textLayers.length + 10,
+      startTime: currentTime,
+      duration: dur,
+      animationIn: 'fade'
     };
     setTextLayers(prev => [...prev, newLayer]);
     setActiveTextLayerId(id);
@@ -429,6 +437,7 @@ export default function CinematicStudioPage() {
       acc += sc.duration;
     }
     setCurrentTime(acc);
+    setActiveTextLayerId(null);
     setAnimKey(k => k + 1);
   }, [scenes]);
 
@@ -682,10 +691,11 @@ export default function CinematicStudioPage() {
           {/* Add Text Menu */}
           <div style={{ position: 'relative' }} ref={textMenuContainerRef}>
             <button
-              className={`${s.topBtn} ${showTextBlockMenu ? s.topBtnActive : ''}`}
-              onClick={() => setShowTextBlockMenu(!showTextBlockMenu)}
+              className={s.addTextBtn}
+              onClick={() => setShowTextBlockMenu(v => !v)}
             >
-              <Plus size={12} /> Add Text
+              <Plus size={10} style={{ display: 'inline', marginRight: 2 }} />
+              Add Text
             </button>
 
             <AnimatePresence>
@@ -695,28 +705,27 @@ export default function CinematicStudioPage() {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 8, scale: 0.95 }}
                   transition={{ duration: 0.15 }}
-                  className={s.textDropdown}
+                  className={s.textBlockMenu}
                 >
-                  <div className={s.textDropdownHeader}>Text Presets</div>
-                  <div className={s.textDropdownGrid}>
-                    {TEXT_BLOCKS.map(block => (
-                      <button
-                        key={block.id}
-                        className={s.textPresetBtn}
-                        onClick={() => addTextBlock(block)}
-                        style={{
-                          fontSize: Math.min(18, block.fontSize * 0.4),
-                          fontWeight: block.fontWeight,
-                          color: block.gradient ? 'transparent' : block.color,
-                          backgroundImage: block.gradient ? 'linear-gradient(135deg, #a855f7, #6366f1)' : 'none',
-                          WebkitBackgroundClip: block.gradient ? 'text' : 'border-box',
-                          backgroundClip: block.gradient ? 'text' : 'border-box',
-                        }}
-                      >
-                        {block.label}
-                      </button>
-                    ))}
-                  </div>
+                  <div className={s.textBlockMenuTitle}>TEXT BLOCKS</div>
+                  {TEXT_BLOCKS.map(block => (
+                    <button
+                      key={block.id}
+                      className={s.textBlockMenuItem}
+                      onClick={() => addTextBlock(block)}
+                    >
+                      <div className={s.textBlockPreview} style={{
+                        fontWeight: block.fontWeight,
+                        fontSize: Math.max(10, block.fontSize * 0.18),
+                        letterSpacing: block.letterSpacing * 0.3,
+                        color: block.gradient ? 'transparent' : block.color,
+                        backgroundImage: block.gradient ? 'linear-gradient(135deg, #a855f7, #6366f1)' : 'none',
+                        WebkitBackgroundClip: block.gradient ? 'text' : 'border-box',
+                        backgroundClip: block.gradient ? 'text' : 'border-box',
+                      }}>{block.text.split('\n')[0]}</div>
+                      <div className={s.textBlockLabel}>{block.label}</div>
+                    </button>
+                  ))}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -824,6 +833,9 @@ export default function CinematicStudioPage() {
               currentTime={currentTime}
               isPlaying={isPlaying}
               totalDuration={totalDuration}
+              textLayers={textLayers}
+              activeTextLayerId={activeTextLayerId}
+              setActiveTextLayerId={setActiveTextLayerId}
               onSelectScene={handleSceneSeek}
               onTimeChange={t => { setCurrentTime(t); setIsPlaying(false); }}
               onPlayPause={handlePlayPause}
@@ -837,6 +849,13 @@ export default function CinematicStudioPage() {
           <RightSidebar
             scene={activeScene}
             scenes={scenes}
+            textLayers={textLayers}
+            activeTextLayerId={activeTextLayerId}
+            updateTextLayer={updateTextLayer}
+            deleteTextLayer={(id) => {
+              setTextLayers(prev => prev.filter(l => l.id !== id));
+              if (activeTextLayerId === id) setActiveTextLayerId(null);
+            }}
             onModeChange={m => updateScene(activeSceneId, { mode: m })}
             onAnimationChange={a => { updateScene(activeSceneId, { animation: a }); setAnimKey(k => k + 1); }}
             onEasingChange={e => updateScene(activeSceneId, { easing: e })}

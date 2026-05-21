@@ -261,9 +261,51 @@ export default function CanvasArea({
       </div>
 
       {/* Text Layers */}
-      {textLayers.map(layer => {
+      {textLayers?.map(layer => {
         if (layer.hidden) return null;
-        // Text layers render relative to viewport size. We use percentages directly for simplicity
+        
+        const startTime = layer.startTime ?? 0;
+        const duration = layer.duration ?? 3;
+        const localTime = currentTime - startTime;
+        
+        // Hide if outside timeline bounds (unless being exported, wait no, always hide out of bounds)
+        // If actively selected, we might want to still hide it if it's out of bounds so they can see the true state
+        const isVisible = localTime >= 0 && localTime <= duration;
+        if (!isVisible && activeTextLayerId !== layer.id) return null;
+
+        let animOpacity = 1;
+        let animY = 0;
+        let animScale = 1;
+        let displayText = layer.text;
+
+        if (isVisible) {
+          const animInDuration = 0.5; // 500ms entrance
+          const inProgress = Math.min(1, Math.max(0, localTime / animInDuration));
+          
+          if (layer.animationIn === 'fade') {
+            animOpacity = inProgress;
+          } else if (layer.animationIn === 'slide-up') {
+            animOpacity = inProgress;
+            animY = (1 - inProgress) * 30; // comes from 30px below
+          } else if (layer.animationIn === 'bounce') {
+            if (localTime < animInDuration) {
+              animOpacity = inProgress;
+              const t = inProgress;
+              // Simple elastic bounce
+              animScale = 1 + Math.sin(t * Math.PI * 3) * Math.pow(1 - t, 2) * 0.5;
+            }
+          } else if (layer.animationIn === 'typewriter') {
+            const charsPerSecond = 20;
+            const charsToShow = Math.floor(localTime * charsPerSecond);
+            if (charsToShow < layer.text.length) {
+              displayText = layer.text.substring(0, charsToShow);
+            }
+          }
+        } else {
+          // If not visible but active (selected), show ghosted
+          animOpacity = 0.2;
+        }
+
         const isGradient = layer.gradient;
         const gradFrom = layer.gradientFrom ?? '#a855f7';
         const gradTo = layer.gradientTo ?? '#6366f1';
@@ -280,15 +322,15 @@ export default function CanvasArea({
             style={{
               position: 'absolute',
               left: `${layer.x}%`,
-              top: `${layer.y}%`,
-              transform: `translate(-50%, -50%) rotate(${layer.rotation ?? 0}deg)`,
+              top: `calc(${layer.y}% + ${animY}px)`,
+              transform: `translate(-50%, -50%) rotate(${layer.rotation ?? 0}deg) scale(${animScale})`,
               maxWidth: layer.width ?? 700,
               width: layer.width ?? 700,
               textAlign: layer.align,
               fontFamily: layer.fontFamily,
               fontSize: layer.fontSize,
               fontWeight: layer.fontWeight,
-              opacity: (layer.opacity ?? 1),
+              opacity: (layer.opacity ?? 1) * animOpacity,
               letterSpacing: layer.letterSpacing,
               lineHeight: layer.lineHeight,
               color: isGradient ? 'transparent' : layer.color,
@@ -305,18 +347,17 @@ export default function CanvasArea({
               pointerEvents: isExporting ? 'none' : 'auto',
               display: isExporting && layer.hidden ? 'none' : 'block',
               zIndex: layer.zIndex,
-              transition: draggingLayerRef?.current === layer.id ? 'none' : 'transform 0.2s cubic-bezier(0.4,0,0.2,1)',
             }}
           >
             <div
               key={editingTextLayerId === layer.id ? 'edit' : 'view'}
-              contentEditable={editingTextLayerId === layer.id}
+              contentEditable={editingTextLayerId === layer.id && !isExporting}
               suppressContentEditableWarning={true}
               onInput={e => updateTextLayer && updateTextLayer(layer.id, { text: (e.target as HTMLElement).innerText })}
               onBlur={() => setEditingTextLayerId && setEditingTextLayerId(null)}
-              style={{ outline: 'none', width: '100%', height: '100%' }}
+              style={{ outline: 'none', width: '100%', height: '100%', whiteSpace: 'pre-wrap' }}
             >
-              {layer.text}
+              {editingTextLayerId === layer.id && !isExporting ? layer.text : displayText}
             </div>
             {activeTextLayerId === layer.id && !isExporting && (
               <>

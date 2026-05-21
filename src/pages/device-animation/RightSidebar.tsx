@@ -7,10 +7,11 @@ import {
   Layers, ZoomIn, Trash2,
 } from 'lucide-react';
 import {
-  AnimationPreset, EasingType, SceneScene, SceneMode,
-  ANIMATION_PRESETS,
+  AnimationPreset, EasingType, SceneScene, SceneMode, TextLayer,
+  ANIMATION_PRESETS, FONT_PRESETS,
 } from './types';
 import s from './page.module.css';
+import { Type } from 'lucide-react';
 
 interface Props {
   scene: SceneScene;
@@ -25,6 +26,13 @@ interface Props {
   onHotspotDelete: (id: string) => void;
   onSceneRename: (name: string) => void;
   onSceneDelete: () => void;
+  
+  textLayers?: TextLayer[];
+  setTextLayers?: React.Dispatch<React.SetStateAction<TextLayer[]>>;
+  activeTextLayerId?: string | null;
+  setActiveTextLayerId?: (id: string | null) => void;
+  updateTextLayer?: (id: string, updates: Partial<TextLayer>) => void;
+  deleteTextLayer?: (id: string) => void;
 }
 
 const EASINGS: { value: EasingType; label: string }[] = [
@@ -73,15 +81,188 @@ function SectionHeader({ icon, label }: { icon: React.ReactNode; label: string }
 export default function RightSidebar({
   scene, scenes, onModeChange, onAnimationChange, onEasingChange,
   onDurationChange, onCameraSpeedChange, onScrollSpeedChange,
-  onHotspotUpdate, onHotspotDelete, onSceneRename, onSceneDelete
+  onHotspotUpdate, onHotspotDelete, onSceneRename, onSceneDelete,
+  textLayers = [], setTextLayers, activeTextLayerId, setActiveTextLayerId,
+  updateTextLayer, deleteTextLayer
 }: Props) {
   const speed = scene.cameraSpeed ?? 1;
   const mode = scene.mode || 'animation';
+  
+  const activeTextLayer = activeTextLayerId ? textLayers.find(l => l.id === activeTextLayerId) : null;
 
   return (
     <>
-      {/* Scene Identity */}
-      <div className={s.inspectorSection} style={{ paddingBottom: 16, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+      {/* ── TEXT LAYER EDITOR (Takes precedence if a text layer is selected) ── */}
+      {activeTextLayer && updateTextLayer && deleteTextLayer && setTextLayers && setActiveTextLayerId && (
+        <>
+          <div className={s.inspectorSection} style={{ paddingBottom: 16, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#f4f4f5' }}>
+                <Type size={12} />
+                <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>Edit Text</span>
+              </div>
+              <div style={{ display: 'flex', gap: 4 }}>
+                <button className={s.textDeleteBtn} title="Duplicate" onClick={() => {
+                  const id = `text-${Date.now()}`;
+                  setTextLayers(prev => [...prev, { ...activeTextLayer, id, x: activeTextLayer.x + 2, y: activeTextLayer.y + 2, zIndex: prev.length + 1 }]);
+                  setActiveTextLayerId(id);
+                }}><Layers size={11} /></button>
+                <button className={s.textDeleteBtn} onClick={() => deleteTextLayer(activeTextLayer.id)}><Trash2 size={11} /></button>
+              </div>
+            </div>
+
+            <textarea
+              className={s.textInput}
+              value={activeTextLayer.text}
+              onChange={e => updateTextLayer(activeTextLayer.id, { text: e.target.value })}
+              placeholder="Your text..."
+              rows={3}
+            />
+
+            <div className={s.textSectionLabel}>FONT</div>
+            <div className={s.fontPresetGrid}>
+              {FONT_PRESETS.map(fp => (
+                <button
+                  key={fp.id}
+                  className={`${s.fontPresetBtn} ${activeTextLayer.fontPreset === fp.id ? s.fontPresetBtnActive : ''}`}
+                  onClick={() => updateTextLayer(activeTextLayer.id, { fontPreset: fp.id, fontFamily: fp.font })}
+                  style={{ fontFamily: fp.font }}
+                >
+                  <span className={s.fontPreviewChar}>{fp.preview}</span>
+                  <span className={s.fontPreviewLabel}>{fp.label}</span>
+                </button>
+              ))}
+            </div>
+
+            <div className={s.textSectionLabel}>TEXT STYLE</div>
+            <div className={s.textPropertiesGrid}>
+              <div className={s.cameraRow}>
+                <div className={s.sliderMeta}>
+                  <span className={s.sliderName}>Size</span>
+                  <span className={s.sliderVal}>{activeTextLayer.fontSize}px</span>
+                </div>
+                <input type="range" className={s.slider} min={10} max={140} value={activeTextLayer.fontSize} onChange={e => updateTextLayer(activeTextLayer.id, { fontSize: +e.target.value })} />
+              </div>
+              <div className={s.cameraRow}>
+                <div className={s.sliderMeta}>
+                  <span className={s.sliderName}>Weight</span>
+                  <span className={s.sliderVal}>{activeTextLayer.fontWeight}</span>
+                </div>
+                <input type="range" className={s.slider} min={100} max={900} step={100} value={activeTextLayer.fontWeight} onChange={e => updateTextLayer(activeTextLayer.id, { fontWeight: +e.target.value })} />
+              </div>
+              <div className={s.cameraRow}>
+                <div className={s.sliderMeta}>
+                  <span className={s.sliderName}>Spacing</span>
+                  <span className={s.sliderVal}>{activeTextLayer.letterSpacing}px</span>
+                </div>
+                <input type="range" className={s.slider} min={-5} max={10} step={0.5} value={activeTextLayer.letterSpacing} onChange={e => updateTextLayer(activeTextLayer.id, { letterSpacing: +e.target.value })} />
+              </div>
+              <div className={s.cameraRow}>
+                <div className={s.sliderMeta}>
+                  <span className={s.sliderName}>Line Height</span>
+                  <span className={s.sliderVal}>{activeTextLayer.lineHeight.toFixed(1)}</span>
+                </div>
+                <input type="range" className={s.slider} min={0.5} max={2.5} step={0.1} value={activeTextLayer.lineHeight} onChange={e => updateTextLayer(activeTextLayer.id, { lineHeight: +e.target.value })} />
+              </div>
+            </div>
+
+            <div className={s.textSectionLabel}>TIMING & ANIMATION</div>
+            <div className={s.textPropertiesGrid}>
+              <div className={s.cameraRow}>
+                <div className={s.sliderMeta}>
+                  <span className={s.sliderName}>Start Time</span>
+                  <span className={s.sliderVal}>{(activeTextLayer.startTime ?? 0).toFixed(1)}s</span>
+                </div>
+                <input type="range" className={s.slider} min={0} max={30} step={0.1} value={activeTextLayer.startTime ?? 0} onChange={e => updateTextLayer(activeTextLayer.id, { startTime: +e.target.value })} />
+              </div>
+              <div className={s.cameraRow}>
+                <div className={s.sliderMeta}>
+                  <span className={s.sliderName}>Duration</span>
+                  <span className={s.sliderVal}>{(activeTextLayer.duration ?? 3).toFixed(1)}s</span>
+                </div>
+                <input type="range" className={s.slider} min={0.5} max={30} step={0.1} value={activeTextLayer.duration ?? 3} onChange={e => updateTextLayer(activeTextLayer.id, { duration: +e.target.value })} />
+              </div>
+              <div className={s.inputRow} style={{ margin: '4px 0 0 0' }}>
+                <label className={s.inputLabel}>Entrance Animation</label>
+                <select
+                  className={s.numberInput}
+                  style={{ width: '100%', padding: '4px 6px', marginTop: 4 }}
+                  value={activeTextLayer.animationIn || 'fade'}
+                  onChange={e => updateTextLayer(activeTextLayer.id, { animationIn: e.target.value as any })}
+                >
+                  <option value="none">None</option>
+                  <option value="fade">Fade In</option>
+                  <option value="typewriter">Typewriter</option>
+                  <option value="bounce">Bounce</option>
+                  <option value="slide-up">Slide Up</option>
+                </select>
+              </div>
+            </div>
+
+            <div className={s.textSectionLabel}>COLOR & EFFECTS</div>
+            <div className={s.textPropertiesGrid}>
+              <div className={s.inputRow} style={{ margin: 0 }}>
+                <label className={s.inputLabel}>Solid Color</label>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <input type="color" value={activeTextLayer.color} onChange={e => updateTextLayer(activeTextLayer.id, { color: e.target.value, gradient: false })} style={{ width: 24, height: 24, padding: 0, border: 'none', borderRadius: 4, cursor: 'pointer', background: 'none' }} />
+                  <input type="text" className={s.numberInput} value={activeTextLayer.color} onChange={e => updateTextLayer(activeTextLayer.id, { color: e.target.value, gradient: false })} style={{ flex: 1, padding: '4px 8px' }} />
+                </div>
+              </div>
+              
+              <div className={s.inputRow} style={{ margin: '4px 0' }}>
+                <label className={s.inputLabel}>Gradient (Optional)</label>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  <input type="checkbox" checked={activeTextLayer.gradient} onChange={e => updateTextLayer(activeTextLayer.id, { gradient: e.target.checked })} />
+                  <input type="color" value={activeTextLayer.gradientFrom ?? '#a855f7'} disabled={!activeTextLayer.gradient} onChange={e => updateTextLayer(activeTextLayer.id, { gradientFrom: e.target.value })} style={{ width: 24, height: 24, padding: 0, border: 'none', borderRadius: 4, cursor: 'pointer', background: 'none', opacity: activeTextLayer.gradient ? 1 : 0.5 }} />
+                  <input type="color" value={activeTextLayer.gradientTo ?? '#6366f1'} disabled={!activeTextLayer.gradient} onChange={e => updateTextLayer(activeTextLayer.id, { gradientTo: e.target.value })} style={{ width: 24, height: 24, padding: 0, border: 'none', borderRadius: 4, cursor: 'pointer', background: 'none', opacity: activeTextLayer.gradient ? 1 : 0.5 }} />
+                </div>
+              </div>
+
+              <div className={s.cameraRow}>
+                <div className={s.sliderMeta}>
+                  <span className={s.sliderName}>Opacity</span>
+                  <span className={s.sliderVal}>{Math.round((activeTextLayer.opacity ?? 1) * 100)}%</span>
+                </div>
+                <input type="range" className={s.slider} min={0} max={1} step={0.05} value={activeTextLayer.opacity ?? 1} onChange={e => updateTextLayer(activeTextLayer.id, { opacity: +e.target.value })} />
+              </div>
+              <div className={s.cameraRow}>
+                <div className={s.sliderMeta}>
+                  <span className={s.sliderName}>Glow</span>
+                  <span className={s.sliderVal}>{activeTextLayer.glow}px</span>
+                </div>
+                <input type="range" className={s.slider} min={0} max={40} value={activeTextLayer.glow} onChange={e => updateTextLayer(activeTextLayer.id, { glow: +e.target.value })} />
+              </div>
+            </div>
+
+            <div className={s.textSectionLabel}>ALIGNMENT</div>
+            <div style={{ display: 'flex', gap: 4 }}>
+              {['left', 'center', 'right'].map(align => (
+                <button
+                  key={align}
+                  className={`${s.tlBtn} ${activeTextLayer.align === align ? s.tlBtnActive : ''}`}
+                  style={{ flex: 1, padding: 4 }}
+                  onClick={() => updateTextLayer(activeTextLayer.id, { align: align as any })}
+                >
+                  <span style={{ fontSize: '0.6rem', textTransform: 'capitalize' }}>{align}</span>
+                </button>
+              ))}
+            </div>
+
+            <button
+              className={s.btnPrimary}
+              style={{ marginTop: 16, background: 'rgba(255,255,255,0.05)', color: '#e4e4e7' }}
+              onClick={() => setActiveTextLayerId(null)}
+            >
+              Done Editing
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* ── SCENE INSPECTOR (Visible if no text layer is actively selected) ── */}
+      <div style={{ display: activeTextLayer ? 'none' : 'block' }}>
+        {/* Scene Identity */}
+        <div className={s.inspectorSection} style={{ paddingBottom: 16, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <input
             type="text"
@@ -399,6 +580,7 @@ export default function RightSidebar({
             </button>
           ))}
         </div>
+      </div>
       </div>
     </>
   );

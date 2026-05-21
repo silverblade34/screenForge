@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useRef, useCallback } from 'react';
-import { Play, Pause, SkipBack, SkipForward } from 'lucide-react';
-import { SceneScene } from './types';
+import { Play, Pause, SkipBack, SkipForward, Type } from 'lucide-react';
+import { SceneScene, TextLayer } from './types';
 import s from './page.module.css';
 
 interface Props {
@@ -15,14 +15,17 @@ interface Props {
   onTimeChange: (t: number) => void;
   onPlayPause: () => void;
   onRestart: () => void;
+  textLayers?: TextLayer[];
+  activeTextLayerId?: string | null;
+  setActiveTextLayerId?: (id: string | null) => void;
 }
 
-const TRACK_LABELS = ['Camera', 'Device', 'Glow', 'BG'];
-const TRACK_COLORS = ['#7c3aed', '#0ea5e9', '#a855f7', '#10b981'];
+const TRACK_COLORS = ['#ec4899', '#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444'];
 
 export default function StudioTimeline({
   scenes, activeSceneId, currentTime, isPlaying,
   totalDuration, onSelectScene, onTimeChange, onPlayPause, onRestart,
+  textLayers = [], activeTextLayerId, setActiveTextLayerId
 }: Props) {
   const trackRef = useRef<HTMLDivElement>(null);
 
@@ -98,9 +101,14 @@ export default function StudioTimeline({
           <div className={s.tlLabel} style={{ height: 18, fontSize: '0.5rem', color: '#3f3f46', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
             SCENES
           </div>
-          {TRACK_LABELS.map(l => (
-            <div key={l} className={s.tlLabel}>{l}</div>
+          {textLayers.map((l, i) => (
+            <div key={l.id} className={s.tlLabel} style={{ color: TRACK_COLORS[i % TRACK_COLORS.length] }}>
+              Text {i + 1}
+            </div>
           ))}
+          {textLayers.length === 0 && (
+            <div className={s.tlLabel} style={{ opacity: 0.5, fontStyle: 'italic' }}>No texts</div>
+          )}
         </div>
 
         {/* Tracks */}
@@ -143,38 +151,36 @@ export default function StudioTimeline({
             ))}
           </div>
 
-          {/* Track rows */}
-          {TRACK_LABELS.map((_, idx) => (
-            <div key={idx} className={s.trackRow}>
-              {clips.map(clip => (
+          {/* Track rows (One per text layer) */}
+          {textLayers.map((layer, idx) => {
+            const left = totalDuration > 0 ? ((layer.startTime ?? 0) / totalDuration) * 100 : 0;
+            const width = totalDuration > 0 ? ((layer.duration ?? 3) / totalDuration) * 100 : 0;
+            const isActive = activeTextLayerId === layer.id;
+            const color = TRACK_COLORS[idx % TRACK_COLORS.length];
+            return (
+              <div key={layer.id} className={s.trackRow}>
                 <div
-                  key={clip.id}
                   className={s.trackClip}
+                  onClick={(e) => { e.stopPropagation(); setActiveTextLayerId?.(layer.id); }}
                   style={{
-                    left: `${clip.left}%`,
-                    width: `calc(${clip.width}% - 2px)`,
-                    background: `${TRACK_COLORS[idx]}18`,
-                    border: `1px solid ${TRACK_COLORS[idx]}30`,
-                    color: TRACK_COLORS[idx],
+                    left: `${left}%`,
+                    width: `calc(${width}% - 2px)`,
+                    background: isActive ? `${color}33` : `${color}18`,
+                    border: `1px solid ${isActive ? color : color + '60'}`,
+                    color: color,
+                    cursor: 'pointer',
+                    zIndex: isActive ? 10 : 1
                   }}
                 >
-                  {idx === 0 ? clip.animation.split('-').map(w => w[0].toUpperCase()).join('') : ''}
+                  <Type size={10} style={{ marginRight: 4, display: 'inline' }} />
+                  {layer.text.substring(0, 15)}...
                 </div>
-              ))}
-              {/* Keyframe diamonds */}
-              {clips.map(clip => (
-                <div
-                  key={`kf-${clip.id}`}
-                  className={s.keyframe}
-                  style={{
-                    left: `${clip.left + clip.width / 2}%`,
-                    background: TRACK_COLORS[idx],
-                    boxShadow: `0 0 6px ${TRACK_COLORS[idx]}80`,
-                  }}
-                />
-              ))}
-            </div>
-          ))}
+              </div>
+            );
+          })}
+          {textLayers.length === 0 && (
+            <div className={s.trackRow} style={{ borderBottom: 'none' }} />
+          )}
 
           {/* Playhead */}
           <div className={s.playhead} style={{ left: `${playheadPct}%` }}>
