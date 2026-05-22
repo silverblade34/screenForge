@@ -73,7 +73,7 @@ function RawFrame({
   if (model === 'none') {
     return (
       <div className={s.container}>
-        <div className={s.shadow} style={shadowStyle} />
+        <div className={s.shadow} style={shadowStyle} data-export-hide="true" />
         <div className={s.content} style={{ borderRadius: 16 }}>{children}</div>
       </div>
     );
@@ -91,7 +91,7 @@ function RawFrame({
 
     return (
       <div className={s.container}>
-        <div className={s.shadow} style={shadowStyle} />
+        <div className={s.shadow} style={shadowStyle} data-export-hide="true" />
         <div
           className={s.browserFrame}
           style={{ '--frame-base': headerBg, '--frame-width': `${600 * (browserScale / 100)}px` } as React.CSSProperties}
@@ -121,7 +121,7 @@ function RawFrame({
   if (model === 'macbook-pro') {
     return (
       <div className={s.container}>
-        <div className={s.shadow} style={shadowStyle} />
+        <div className={s.shadow} style={shadowStyle} data-export-hide="true" />
         <div
           className={s.macbookFrame}
           style={{ '--frame-width': '600px', '--frame-base': c.base, '--frame-highlight': c.highlight, '--frame-shadow': c.shadow, '--metallic-gradient': c.metallicGradient } as React.CSSProperties}
@@ -171,7 +171,7 @@ function RawFrame({
 
   return (
     <div className={s.container}>
-      <div className={s.shadow} style={shadowStyle} />
+      <div className={s.shadow} style={shadowStyle} data-export-hide="true" />
       <div className={s.iphoneFrame} style={iphoneVars}>
         {/* Animated rim light */}
         <div className={s.rimLight} aria-hidden="true" />

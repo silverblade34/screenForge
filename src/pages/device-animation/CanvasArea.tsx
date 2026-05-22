@@ -140,25 +140,102 @@ export default function CanvasArea({
     scrollBgPos = `50% ${progress * 100}%`;
   }
 
-  // Build a style object that html2canvas can render correctly
-  // Build a style object that html2canvas can render correctly
+  // Use background.style directly for visual rendering in the editor
   const bgRaw = background.style?.background as string | undefined;
-  const bgStyle: React.CSSProperties = {
-    ...background.style,
-    ...(bgRaw && (bgRaw.startsWith('linear') || bgRaw.startsWith('radial'))
-      ? { backgroundImage: bgRaw, background: undefined }
-      : {}),
-    ...(bgRaw && (bgRaw.startsWith('#') || bgRaw.startsWith('rgb'))
-      ? { backgroundColor: bgRaw, background: undefined }
-      : {}),
-    // Ensure the shorthand 'background' property is cleared to avoid conflicts
-    background: undefined,
-  };
+  const bgStyle: React.CSSProperties = background.style ?? {};
 
   const animVariants = getVariants(activeScene.animation, activeScene.easing);
 
+  /**
+   * Compute the exact CSS animation state for the current `localTime`.
+   * During export we bypass framer-motion (which uses wall-clock time and
+   * would run too fast/slow relative to the captured video frames).
+   * Each preset mirrors the framer-motion variant math with sine-wave easing.
+   */
+  const computeExportAnimStyle = (): React.CSSProperties | undefined => {
+    if (!isExporting) return undefined;
+    const t = localTime; // seconds into this scene
+
+    const easeInOut = (p: number) =>
+      p < 0.5 ? 2 * p * p : -1 + (4 - 2 * p) * p;
+
+    switch (activeScene.animation) {
+      /* Continuous loops — oscillate with localTime */
+      case 'floating-drift': {
+        const period = 8;
+        const s = Math.sin((t / period) * Math.PI * 2);
+        return {
+          transform: `translateY(${s * 10}px) scale(${1 + s * 0.006}) rotateX(${s}deg) rotateY(${s * 2}deg)`,
+        };
+      }
+      case 'ambient-motion': {
+        const period = 12;
+        const s = Math.sin((t / period) * Math.PI * 2);
+        return {
+          transform: `translateX(${s * 6}px) translateY(${s * 6 - 2}px) scale(${1 + s * 0.004}) rotateZ(${s * 0.5}deg)`,
+        };
+      }
+      case 'depth-parallax': {
+        const period = 10;
+        const s = Math.sin((t / period) * Math.PI * 2);
+        return {
+          transform: `translateY(${s * 14}px) scale(${1 + s * 0.009})`,
+        };
+      }
+      /* One-shot entrances — interpolate over transition duration then hold */
+      case 'cinematic-push': {
+        const p = easeInOut(Math.min(t / 1.6, 1));
+        return {
+          transform: `scale(${0.94 + p * 0.06}) translateY(${14 - p * 14}px)`,
+          opacity: p,
+        };
+      }
+      case 'hero-reveal': {
+        const p = easeInOut(Math.min(t / 1.2, 1));
+        return {
+          transform: `scale(${0.96 + p * 0.04}) translateY(${32 - p * 32}px)`,
+          opacity: p,
+          filter: `blur(${(1 - p) * 8}px)`,
+        };
+      }
+      case 'precision-zoom': {
+        const p = easeInOut(Math.min(t / 1.4, 1));
+        return {
+          transform: `scale(${0.88 + p * 0.12})`,
+          opacity: p,
+          filter: `blur(${(1 - p) * 4}px)`,
+        };
+      }
+      case 'focus-pull': {
+        const p = easeInOut(Math.min(t / 1.4, 1));
+        return {
+          transform: `scale(${1.03 - p * 0.03})`,
+          opacity: p,
+          filter: `blur(${(1 - p) * 16}px)`,
+        };
+      }
+      case 'camera-slide': {
+        const p = easeInOut(Math.min(t / 1.4, 1));
+        return {
+          transform: `translateX(${-80 + p * 80}px) scale(${0.97 + p * 0.03})`,
+          opacity: p,
+        };
+      }
+      default:
+        return { opacity: 1 };
+    }
+  };
+
+  const exportAnimStyle = computeExportAnimStyle();
+
   return (
-    <div className={s.canvasViewport} style={bgStyle} onDragOver={e => e.preventDefault()} onDrop={handleDrop}>
+    <div
+      className={s.canvasViewport}
+      style={bgStyle}
+      data-bg={bgRaw ?? ''}
+      onDragOver={e => e.preventDefault()}
+      onDrop={handleDrop}
+    >
       <div className={s.canvasGrid} data-export-hide="true" />
 
       {/* Virtual Camera Stage */}
@@ -169,35 +246,39 @@ export default function CanvasArea({
           filter: effectiveCamera.blur > 0 ? `blur(${effectiveCamera.blur}px)` : undefined,
         }}
       >
-        {/* Glow Layer */}
+        {/* Glow Layer — hidden during export */}
         {glowLayer?.visible && (
-          <div style={{
-            position: 'absolute',
-            inset: -60,
-            borderRadius: '50%',
-            background: 'radial-gradient(ellipse, rgba(168,85,247,0.18) 0%, transparent 70%)',
-            pointerEvents: 'none',
-            opacity: glowLayer.opacity / 100,
-            animation: activeScene.animation === 'hero-reveal' || activeScene.animation === 'floating-drift'
-              ? 'none' : undefined,
-          }} />
+          <div
+            data-export-hide="true"
+            style={{
+              position: 'absolute',
+              inset: -60,
+              borderRadius: '50%',
+              background: 'radial-gradient(ellipse, rgba(168,85,247,0.18) 0%, transparent 70%)',
+              pointerEvents: 'none',
+              opacity: glowLayer.opacity / 100,
+            }}
+          />
         )}
 
-        {/* Shadow Layer */}
+        {/* Shadow Layer — hidden during export */}
         {shadowLayer?.visible && (
-          <div style={{
-            position: 'absolute',
-            bottom: -40,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            width: '60%',
-            height: 24,
-            borderRadius: '50%',
-            background: 'rgba(0,0,0,0.5)',
-            filter: 'blur(16px)',
-            opacity: shadowLayer.opacity / 100,
-            pointerEvents: 'none',
-          }} />
+          <div
+            data-export-hide="true"
+            style={{
+              position: 'absolute',
+              bottom: -40,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: '60%',
+              height: 24,
+              borderRadius: '50%',
+              background: 'rgba(0,0,0,0.5)',
+              filter: 'blur(16px)',
+              opacity: shadowLayer.opacity / 100,
+              pointerEvents: 'none',
+            }}
+          />
         )}
 
         {/* 3D Scene container */}
@@ -205,15 +286,21 @@ export default function CanvasArea({
           <AnimatePresence mode={isExporting ? 'sync' : 'wait'}>
             <motion.div
               key={isExporting ? activeScene.id : `${activeScene.id}-${animKey}`}
-              variants={animVariants}
+              // During export: bypass framer-motion — apply manually computed style
+              variants={isExporting ? undefined : animVariants}
               initial={isExporting ? false : 'initial'}
-              animate="animate"
-              transition={isExporting ? { duration: 0 } : animVariants.transition}
+              animate={isExporting ? undefined : 'animate'}
+              transition={isExporting ? undefined : animVariants.transition}
+              // Instantly hide the EXITING scene during export so AnimatePresence
+              // in sync mode never shows two devices side-by-side on the same frame.
+              exit={isExporting ? { opacity: 0, transition: { duration: 0 } } : undefined}
               style={{
                 perspective: 1200,
                 transformStyle: 'preserve-3d',
-                opacity: deviceLayer?.visible ? deviceLayer.opacity / 100 : 0
+                opacity: deviceLayer?.visible ? deviceLayer.opacity / 100 : 0,
+                ...(exportAnimStyle ?? {}),
               }}
+
             >
               <input
                 type="file"
