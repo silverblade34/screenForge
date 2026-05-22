@@ -270,8 +270,8 @@
 }
 
 .browserDot {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
 }
 
@@ -297,7 +297,7 @@
 .macbookScreen {
   background: #000;
   border-radius: 16px 16px 0 0;
-  padding: 14px 14px 20px 14px;
+  padding: 8px 8px 12px 8px;
   width: 100%;
   position: relative;
   display: flex;
@@ -313,11 +313,11 @@
 
 .macbookCamera {
   position: absolute;
-  top: 6px;
+  top: 3px;
   left: 50%;
   transform: translateX(-50%);
-  width: 6px;
-  height: 6px;
+  width: 4px;
+  height: 4px;
   background: radial-gradient(circle, #0e203f 0%, #000000 80%);
   border-radius: 50%;
   box-shadow: 0 0 1px rgba(255,255,255,0.4);

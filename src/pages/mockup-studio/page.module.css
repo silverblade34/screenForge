@@ -716,6 +716,7 @@
 .placeholderText { font-size: 0.68rem; font-weight: 600; color: #52525b; margin-top: 4px; }
 .placeholderSubtext { font-size: 0.58rem; color: #3f3f46; }
 .uploadedImage { width: 100%; height: 100%; object-fit: cover; display: block; }
+.containImage { object-fit: contain !important; }
 
 /* ─── Animations ─── */
 @keyframes fadeSlideIn {

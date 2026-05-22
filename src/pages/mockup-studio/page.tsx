@@ -250,6 +250,22 @@ export default function MockupStudioPage() {
   /* Images */
   const [image, setImage] = useState<string | null>(null);
   const [image2, setImage2] = useState<string | null>(null);
+  const [imageAspect, setImageAspect] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!image) {
+      setImageAspect(null);
+      return;
+    }
+    const img = new Image();
+    img.onload = () => {
+      if (img.width && img.height) {
+        setImageAspect(img.width / img.height);
+      }
+    };
+    img.src = image;
+  }, [image]);
+
   const [activeSlot, setActiveSlot] = useState<1 | 2>(1);
 
   /* Device */
@@ -306,6 +322,108 @@ export default function MockupStudioPage() {
     }
     return DEFAULT_BG;
   };
+
+  // On Mount: Load settings
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('mockup_studio_settings');
+      if (saved) {
+        const data = JSON.parse(saved);
+        if (data.image) setImage(data.image);
+        if (data.image2) setImage2(data.image2);
+        if (data.device) setDevice(data.device);
+        if (data.frameColor) setFrameColor(data.frameColor);
+        if (data.screens) setScreens(data.screens);
+        if (data.dualLayout) setDualLayout(data.dualLayout);
+        if (data.activePreset !== undefined) setActivePreset(data.activePreset);
+        if (data.zoom !== undefined) setZoom(data.zoom);
+        if (data.posX !== undefined) setPosX(data.posX);
+        if (data.posY !== undefined) setPosY(data.posY);
+        if (data.tiltX !== undefined) setTiltX(data.tiltX);
+        if (data.tiltY !== undefined) setTiltY(data.tiltY);
+        if (data.shadow !== undefined) setShadow(data.shadow);
+        if (data.bg) {
+          const bgId = typeof data.bg === 'string' ? data.bg : data.bg.id;
+          setBg(findBg(bgId));
+        }
+        if (data.textLayers) setTextLayers(data.textLayers);
+        if (data.canvasFormat) setCanvasFormat(data.canvasFormat);
+        if (data.browserVariant) setBrowserVariant(data.browserVariant);
+        if (data.browserScale !== undefined) setBrowserScale(data.browserScale);
+        if (data.browserUrl !== undefined) setBrowserUrl(data.browserUrl);
+        if (data.exportRes) setExportRes(data.exportRes);
+        if (data.exportMode) setExportMode(data.exportMode);
+      }
+    } catch (err) {
+      console.error('Error loading settings from localStorage', err);
+    }
+  }, []);
+
+  // Save settings whenever any configuration state changes
+  useEffect(() => {
+    try {
+      const settings = {
+        image,
+        image2,
+        device,
+        frameColor,
+        screens,
+        dualLayout,
+        activePreset,
+        zoom,
+        posX,
+        posY,
+        tiltX,
+        tiltY,
+        shadow,
+        bg,
+        textLayers,
+        canvasFormat,
+        browserVariant,
+        browserScale,
+        browserUrl,
+        exportRes,
+        exportMode
+      };
+      localStorage.setItem('mockup_studio_settings', JSON.stringify(settings));
+    } catch (err) {
+      // If we exceed quota (e.g. because image data URL is too large), try to save without images!
+      if (err instanceof DOMException && err.name === 'QuotaExceededError') {
+        try {
+          const settingsWithoutImages = {
+            device,
+            frameColor,
+            screens,
+            dualLayout,
+            activePreset,
+            zoom,
+            posX,
+            posY,
+            tiltX,
+            tiltY,
+            shadow,
+            bg,
+            textLayers,
+            canvasFormat,
+            browserVariant,
+            browserScale,
+            browserUrl,
+            exportRes,
+            exportMode
+          };
+          localStorage.setItem('mockup_studio_settings', JSON.stringify(settingsWithoutImages));
+        } catch (innerErr) {
+          console.error('Failed to save settings even without images', innerErr);
+        }
+      } else {
+        console.error('Error saving settings to localStorage', err);
+      }
+    }
+  }, [
+    image, image2, device, frameColor, screens, dualLayout, activePreset,
+    zoom, posX, posY, tiltX, tiltY, shadow, bg, textLayers, canvasFormat,
+    browserVariant, browserScale, browserUrl, exportRes, exportMode
+  ]);
 
   /* ── Apply layout preset ── */
   const applyPreset = useCallback((preset: LayoutPreset) => {
@@ -1106,6 +1224,8 @@ export default function MockupStudioPage() {
      CANVAS
   ═══════════════════════════════════════ */
 
+  const clampedAspect = imageAspect ? Math.max(1.25, Math.min(2.33, imageAspect)) : undefined;
+
   const frameProps = {
     model: device,
     color: frameColor,
@@ -1118,7 +1238,10 @@ export default function MockupStudioPage() {
     browserVariant,
     browserUrl,
     browserScale,
+    imageAspectRatio: clampedAspect,
   };
+
+  const isContainDevice = device === 'browser' || device === 'macbook-pro';
 
   const singleDevice = (
     <div
@@ -1130,7 +1253,7 @@ export default function MockupStudioPage() {
     >
       <DeviceFrame {...frameProps}>
         {image
-          ? <img src={image} alt="" className={s.uploadedImage} />
+          ? <img src={image} alt="" className={`${s.uploadedImage} ${isContainDevice ? s.containImage : ''}`} />
           : <UploadPlaceholder />
         }
         {image && (
@@ -1171,7 +1294,7 @@ export default function MockupStudioPage() {
         onDrop={e => handleDrop(e, 1)}
       >
         <DeviceFrame {...frameProps} scale={82}>
-          {image ? <img src={image} alt="" className={s.uploadedImage} /> : <UploadPlaceholder />}
+          {image ? <img src={image} alt="" className={`${s.uploadedImage} ${isContainDevice ? s.containImage : ''}`} /> : <UploadPlaceholder />}
           {image && (
             <div className={s.deviceUploadOverlay}>
               <div className={s.deviceUploadIconWrapper}>
@@ -1205,7 +1328,7 @@ export default function MockupStudioPage() {
         onDrop={e => handleDrop(e, 2)}
       >
         <DeviceFrame {...frameProps} scale={82}>
-          {image2 ? <img src={image2} alt="" className={s.uploadedImage} /> : <UploadPlaceholder />}
+          {image2 ? <img src={image2} alt="" className={`${s.uploadedImage} ${isContainDevice ? s.containImage : ''}`} /> : <UploadPlaceholder />}
           {image2 && (
             <div className={s.deviceUploadOverlay}>
               <div className={s.deviceUploadIconWrapper}>

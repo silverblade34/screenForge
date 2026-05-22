@@ -39,6 +39,7 @@ export interface DeviceFrameProps {
   browserVariant?: BrowserVariant;
   browserUrl?: string;
   browserScale?: number;
+  imageAspectRatio?: number;
 }
 
 const frameColors: Record<FrameColor, {
@@ -60,9 +61,9 @@ const frameColors: Record<FrameColor, {
 
 /* ─── Internal: renders the raw device frame (no wrapper) ──── */
 function RawFrame({
-  model, color = 'spaceBlack', children, shadowIntensity, browserVariant = 'safari-light', browserUrl = '', browserScale = 100
+  model, color = 'spaceBlack', children, shadowIntensity, browserVariant = 'safari-light', browserUrl = '', browserScale = 100, imageAspectRatio
 }: {
-  model: DeviceModel; color: FrameColor; children: React.ReactNode; shadowIntensity: number; browserVariant?: BrowserVariant; browserUrl?: string; browserScale?: number;
+  model: DeviceModel; color: FrameColor; children: React.ReactNode; shadowIntensity: number; browserVariant?: BrowserVariant; browserUrl?: string; browserScale?: number; imageAspectRatio?: number;
 }) {
   const c = frameColors[color] || frameColors.spaceBlack;
 
@@ -96,20 +97,20 @@ function RawFrame({
           className={s.browserFrame}
           style={{ '--frame-base': headerBg, '--frame-width': `${600 * (browserScale / 100)}px` } as React.CSSProperties}
         >
-          <div className={s.browserHeader} style={{ background: headerBg, justifyContent: isSafari ? 'center' : 'flex-start', padding: isArc ? '8px 16px' : '12px 16px', position: 'relative' }}>
-            <div style={{ display: 'flex', gap: 6, position: isSafari ? 'absolute' : 'static', left: 16 }}>
+          <div className={s.browserHeader} style={{ background: headerBg, justifyContent: isSafari ? 'center' : 'flex-start', padding: isArc ? '6px 12px' : '7px 14px', position: 'relative' }}>
+            <div style={{ display: 'flex', gap: 5, position: isSafari ? 'absolute' : 'static', left: 14 }}>
               <div className={s.browserDot} style={{ background: '#ff5f57' }} />
               <div className={s.browserDot} style={{ background: '#febc2e' }} />
               <div className={s.browserDot} style={{ background: '#28c840' }} />
             </div>
             
             {!isArc && (
-              <div style={{ background: barBg, borderRadius: 6, padding: '4px 12px', fontSize: '10px', color: textColor, opacity: 0.6, width: isSafari ? '240px' : '100%', maxWidth: '300px', marginLeft: isChrome ? 16 : 0, textAlign: isSafari ? 'center' : 'left', display: 'flex', alignItems: 'center' }}>
+              <div style={{ background: barBg, borderRadius: 6, padding: '2.5px 10px', fontSize: '10px', color: textColor, opacity: 0.6, width: isSafari ? '240px' : '100%', maxWidth: '300px', marginLeft: isChrome ? 14 : 0, textAlign: isSafari ? 'center' : 'left', display: 'flex', alignItems: 'center' }}>
                 {browserUrl || 'example.com'}
               </div>
             )}
           </div>
-          <div className={s.browserContent}>
+          <div className={s.browserContent} style={{ background: isDark ? '#141414' : '#ffffff', aspectRatio: imageAspectRatio ? String(imageAspectRatio) : undefined }}>
             {children}
             <div className={s.reflection} />
           </div>
@@ -126,7 +127,7 @@ function RawFrame({
           className={s.macbookFrame}
           style={{ '--frame-width': '600px', '--frame-base': c.base, '--frame-highlight': c.highlight, '--frame-shadow': c.shadow, '--metallic-gradient': c.metallicGradient } as React.CSSProperties}
         >
-          <div className={s.macbookScreen}>
+          <div className={s.macbookScreen} style={{ aspectRatio: imageAspectRatio ? String(imageAspectRatio) : undefined }}>
             <div className={s.macbookCamera} />
             <div className={s.content} style={{ borderRadius: 4 }}>
               {children}
@@ -216,6 +217,7 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
   browserVariant,
   browserUrl,
   browserScale,
+  imageAspectRatio,
 }) => {
   const c = frameColors[color] || frameColors.spaceBlack;
 
@@ -245,7 +247,7 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
 
       {/* Main device — z-index: 1 so it sits above glow */}
       <div style={{ position: 'relative', zIndex: 1 }}>
-        <RawFrame model={model} color={color} shadowIntensity={shadow} browserVariant={browserVariant} browserUrl={browserUrl} browserScale={browserScale}>
+        <RawFrame model={model} color={color} shadowIntensity={shadow} browserVariant={browserVariant} browserUrl={browserUrl} browserScale={browserScale} imageAspectRatio={imageAspectRatio}>
           {children}
         </RawFrame>
       </div>
@@ -254,7 +256,7 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
       {showReflection && (
         <div className={s.groundReflection} aria-hidden="true" data-export-hide="true">
           <div className={s.groundReflectionInner}>
-            <RawFrame model={model} color={color} shadowIntensity={0} browserVariant={browserVariant} browserUrl={browserUrl} browserScale={browserScale}>
+            <RawFrame model={model} color={color} shadowIntensity={0} browserVariant={browserVariant} browserUrl={browserUrl} browserScale={browserScale} imageAspectRatio={imageAspectRatio}>
               {children}
             </RawFrame>
           </div>
