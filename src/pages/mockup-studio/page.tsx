@@ -323,6 +323,8 @@ export default function MockupStudioPage() {
     return DEFAULT_BG;
   };
 
+  const isLoaded = useRef(false);
+
   // On Mount: Load settings
   useEffect(() => {
     try {
@@ -356,11 +358,18 @@ export default function MockupStudioPage() {
       }
     } catch (err) {
       console.error('Error loading settings from localStorage', err);
+    } finally {
+      // Small timeout to ensure state updates have flushed before allowing saves
+      setTimeout(() => {
+        isLoaded.current = true;
+      }, 100);
     }
   }, []);
 
   // Save settings whenever any configuration state changes
   useEffect(() => {
+    if (!isLoaded.current) return;
+    
     try {
       const settings = {
         image,
