@@ -104,14 +104,15 @@ interface SplitPanelProps {
 }
 
 export function SplitPanel({ left, right, leftLabel = 'Editor', rightLabel = 'Preview' }: SplitPanelProps) {
-  const [leftWidth, setLeftWidth] = useState(320);
+  const [leftWidthPct, setLeftWidthPct] = useState(25);
   const isDragging = useRef(false);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isDragging.current) return;
-      const newWidth = Math.max(200, Math.min(e.clientX, window.innerWidth - 300));
-      setLeftWidth(newWidth);
+      const pct = (e.clientX / window.innerWidth) * 100;
+      const newWidthPct = Math.max(15, Math.min(pct, 50));
+      setLeftWidthPct(newWidthPct);
     };
 
     const handleMouseUp = () => {
@@ -138,7 +139,7 @@ export function SplitPanel({ left, right, leftLabel = 'Editor', rightLabel = 'Pr
 
   return (
     <div className={s.splitPanel}>
-      <div className={s.panelLeft} style={{ width: leftWidth, minWidth: leftWidth }}>
+      <div className={s.panelLeft} style={{ width: `${leftWidthPct}%`, minWidth: 'min(240px, 40%)', maxWidth: '60%' }}>
         <div className={s.panelLabel}>{leftLabel}</div>
         <div className={s.panelBody}>{left}</div>
       </div>

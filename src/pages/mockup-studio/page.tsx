@@ -310,6 +310,19 @@ export default function MockupStudioPage() {
   const canvasBgRef = useRef<HTMLDivElement>(null);
   const deviceRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [canvasDim, setCanvasDim] = useState({ w: 800, h: 450 });
+  
+  useEffect(() => {
+    if (!canvasBgRef.current) return;
+    const ob = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setCanvasDim({ w: entry.contentRect.width, h: entry.contentRect.height });
+      }
+    });
+    ob.observe(canvasBgRef.current);
+    return () => ob.disconnect();
+  }, []);
+
   const resizeLayerRef = useRef<string | null>(null);
   const resizeStartRef = useRef<{ mx: number; w: number } | null>(null);
   const { addToast } = useToastStore();
@@ -619,8 +632,11 @@ export default function MockupStudioPage() {
   // The wrapper sits at canvas center (top:50% left:50%), width/height auto.
   // translate(-50%,-50%) centers on the device's own bounding box.
   // posX/posY (-45..+45) map to ±30% of the canvas via a CSS var we inject.
-  const canvasW = canvasBgRef.current?.offsetWidth ?? 800;
-  const canvasH = canvasBgRef.current?.offsetHeight ?? 450;
+  const canvasW = canvasDim.w;
+  const canvasH = canvasDim.h;
+  const BASE_WIDTH = 800; // Original default width
+  const dynamicScale = canvasW / BASE_WIDTH;
+  
   const formatRatios: Record<string, string> = {
     '16:9': '16/9',
     '9:16': '9/16',
@@ -628,6 +644,7 @@ export default function MockupStudioPage() {
     '4:3': '4/3',
     '5:3': '5/3',
   };
+
   const pxX = (posX / 100) * canvasW;
   const pxY = (posY / 100) * canvasH;
 
@@ -643,7 +660,7 @@ export default function MockupStudioPage() {
     transformOrigin: 'center center',
     transform: [
       `translate(calc(-50% + ${pxX}px), calc(-50% + ${pxY}px))`,
-      `scale(${zoom / 100})`,
+      `scale(${(zoom / 100) * dynamicScale})`,
       `rotateX(${tiltX}deg)`,
       `rotateY(${tiltY}deg)`,
     ].join(' '),
@@ -1392,11 +1409,11 @@ export default function MockupStudioPage() {
                 onPointerCancel={handleTextLayerPointerUp}
                 style={{
                   transform: `translate(calc(-50% + ${txPx}px), calc(-50% + ${tyPx}px)) rotate(${layer.rotation ?? 0}deg)`,
-                  maxWidth: layer.width ?? 700,
-                  width: layer.width ?? 700,
+                  maxWidth: (layer.width ?? 700) * dynamicScale,
+                  width: (layer.width ?? 700) * dynamicScale,
                   textAlign: layer.align,
                   fontFamily: layer.fontFamily,
-                  fontSize: layer.fontSize,
+                  fontSize: layer.fontSize * dynamicScale,
                   fontWeight: layer.fontWeight,
                   opacity: (layer.opacity ?? 1),
                   letterSpacing: layer.letterSpacing,
@@ -1448,7 +1465,7 @@ export default function MockupStudioPage() {
                       }}
                       onPointerMove={e => {
                         if (resizeLayerRef.current !== layer.id || !resizeStartRef.current) return;
-                        const dx = e.clientX - resizeStartRef.current.mx;
+                        const dx = (e.clientX - resizeStartRef.current.mx) / dynamicScale;
                         const newW = Math.max(100, resizeStartRef.current.w + dx);
                         updateTextLayer(layer.id, { width: newW });
                       }}
