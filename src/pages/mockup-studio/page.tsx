@@ -663,6 +663,7 @@ export default function MockupStudioPage() {
       `scale(${(zoom / 100) * dynamicScale})`,
       `rotateX(${tiltX}deg)`,
       `rotateY(${tiltY}deg)`,
+      `rotateZ(${(-tiltY * 0.6) + (tiltX * 0.1)}deg)`
     ].join(' '),
     transition: 'transform 0.38s cubic-bezier(0.4,0,0.2,1)',
     transformStyle: 'preserve-3d',
