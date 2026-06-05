@@ -4,7 +4,7 @@ import { ExportSettings } from '@/lib/export/videoExporter';
 
 interface Props {
   onClose: () => void;
-  onExport: (settings: Omit<ExportSettings, 'canvasElement' | 'onSeekFrame' | 'onProgress'>) => void;
+  onExport: (settings: Omit<ExportSettings, 'stage' | 'onSeekFrame' | 'onProgress'>) => void;
   duration: number;
 }
 

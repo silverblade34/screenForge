@@ -1,5 +1,6 @@
 import { getFFmpeg } from './ffmpeg';
-import { ExportRenderer } from './ExportRenderer';
+import { KonvaExportRenderer } from './KonvaExportRenderer';
+import Konva from 'konva';
 import { SceneScene, TextLayer } from '@/pages/device-animation/types';
 
 const LOG = '[videoExporter]';
@@ -14,7 +15,7 @@ export interface ExportSettings {
   scenes: SceneScene[];
   textLayers: TextLayer[];
   /** The live React canvas viewport DOM element to capture from. */
-  canvasElement: HTMLElement;
+  stage: Konva.Stage;
   /** Called each frame to advance the preview timeline before capture. */
   onSeekFrame: (time: number) => void;
   onProgress: (
@@ -29,17 +30,40 @@ export interface ExportSettings {
  * Wait two animation frames so React has fully painted after a state update.
  * One rAF is usually enough but two guarantees layout+paint are committed.
  */
-function waitForPaint(): Promise<void> {
-  return new Promise(resolve => {
-    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+async function waitForPaint(stage: Konva.Stage): Promise<void> {
+  // 1. Wait for React to render the new state
+  await new Promise(resolve => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve(null)));
   });
+
+  // 2. Wait for any video elements to finish seeking
+  const images = stage.find('Image');
+  const promises: Promise<void>[] = [];
+  
+  images.forEach((node: any) => {
+    const img = node.image ? node.image() : null;
+    if (img instanceof HTMLVideoElement) {
+      if (img.seeking) {
+        promises.push(new Promise((resolve) => {
+          img.addEventListener('seeked', () => resolve(), { once: true });
+        }));
+      }
+    }
+  });
+  
+  if (promises.length > 0) {
+    await Promise.all(promises);
+  }
+  
+  // 3. One more rAF to let Konva paint the newly seeked video frame
+  await new Promise(resolve => requestAnimationFrame(() => resolve(null)));
 }
 
 export const exportVideo = async (settings: ExportSettings): Promise<string> => {
-  const { width, height, fps, duration, quality, canvasElement, onSeekFrame, onProgress } = settings;
+  const { width, height, fps, duration, quality, stage, onSeekFrame, onProgress } = settings;
 
   console.log(`${LOG} ─── Export Start ─── ${width}x${height} @ ${fps}fps, duration=${duration}s, quality=${quality}`);
-  console.log(`${LOG} Canvas element:`, canvasElement, `size: ${canvasElement.offsetWidth}x${canvasElement.offsetHeight}`);
+  console.log(`${LOG} Stage size: ${stage.width()}x${stage.height()}`);
 
   const totalFrames = Math.floor(duration * fps);
   console.log(`${LOG} Total frames to render: ${totalFrames}`);
@@ -50,7 +74,7 @@ export const exportVideo = async (settings: ExportSettings): Promise<string> => 
   console.log(`${LOG} FFmpeg ready`);
 
   // ── 2. Init renderer ────────────────────────────────────────────────────────
-  const renderer = new ExportRenderer(canvasElement, width, height);
+  const renderer = new KonvaExportRenderer(stage);
   console.log(`${LOG} ExportRenderer created`);
 
   // ── 3. Render frames ─────────────────────────────────────────────────────
@@ -63,7 +87,7 @@ export const exportVideo = async (settings: ExportSettings): Promise<string> => 
     try {
       // Seek timeline and wait for React to repaint
       onSeekFrame(time);
-      await waitForPaint();
+      await waitForPaint(stage);
 
       // Capture DOM
       console.log(`${LOG} Capturing ${frameLabel}...`);

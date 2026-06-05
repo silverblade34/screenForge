@@ -114,15 +114,25 @@ export default function LeftSidebar({
       {device !== 'none' && device !== 'browser' && (
         <div className={s.inspectorSection}>
           <SectionHeader icon={<Palette size={10} />} label="Frame Color" />
-          <div className={s.colorRow}>
+          <div className={s.frameGrid}>
             {FRAME_COLORS.map(c => (
               <button
                 key={c.value}
                 title={c.label}
-                className={`${s.colorSwatch} ${frameColor === c.value ? s.colorSwatchActive : ''}`}
-                style={{ background: c.color }}
+                className={`${s.frameOption} ${frameColor === c.value ? s.frameOptionActive : ''}`}
                 onClick={() => onFrameColor(c.value)}
-              />
+              >
+                <div 
+                  className={s.frameOptionImg}
+                  style={{
+                    backgroundImage: `url(${c.preview})`,
+                    backgroundSize: 'contain',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'center bottom',
+                  }}
+                />
+                <span className={s.frameOptionLabel}>{c.label}</span>
+              </button>
             ))}
           </div>
         </div>

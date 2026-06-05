@@ -1,14 +1,17 @@
 'use client';
 
-import React from 'react';
+import React, { useRef } from 'react';
 import {
   Zap, Sliders, Film, Wind, Maximize2, Move, Sparkles, Eye, Slash,
   Activity, Clock, Settings2, Download, Gauge, ScrollText, PlayCircle, PlusCircle, Network,
-  Layers, ZoomIn, Trash2,
+  Layers, ZoomIn, Trash2, Video,
 } from 'lucide-react';
 import {
-  AnimationPreset, EasingType, SceneScene, SceneMode, TextLayer,
-  ANIMATION_PRESETS, FONT_PRESETS,
+  AnimationPreset, EasingType, SceneScene, SceneMode, TextLayer, FlowHotspot,
+  FONT_PRESETS,
+  SCENE_PRESETS,
+  EASINGS,
+  ANIMATION_PRESETS,
 } from './types';
 import s from './page.module.css';
 import { Type } from 'lucide-react';
@@ -20,12 +23,18 @@ interface Props {
   onAnimationChange: (a: AnimationPreset) => void;
   onEasingChange: (e: EasingType) => void;
   onDurationChange: (d: number) => void;
-  onCameraSpeedChange: (s: number) => void;
+  onCameraSpeedChange?: (s: number) => void;
   onScrollSpeedChange: (s: number) => void;
   onHotspotUpdate: (id: string, updates: Partial<import('./types').FlowHotspot>) => void;
   onHotspotDelete: (id: string) => void;
   onSceneRename: (name: string) => void;
   onSceneDelete: () => void;
+  // Video
+  onVideoLoopChange?: (v: boolean) => void;
+  onVideoMutedChange?: (v: boolean) => void;
+  onVideoPlaybackRateChange: (r: number) => void;
+  onVideoTrimChange: (start: number, end: number) => void;
+  videoFileInputRef?: React.RefObject<HTMLInputElement | null>;
 
   textLayers?: TextLayer[];
   setTextLayers?: React.Dispatch<React.SetStateAction<TextLayer[]>>;
@@ -40,8 +49,8 @@ const EASINGS: { value: EasingType; label: string }[] = [
   { value: 'ease-out', label: 'Ease Out' },
   { value: 'ease-in-out', label: 'Ease In-Out' },
   { value: 'linear', label: 'Linear' },
-  { value: 'anticipate', label: 'Anticipate' },
-  { value: 'bounce', label: 'Bounce' },
+  { value: 'ease-in-out', label: 'Anticipate' },
+  { value: 'ease-in-out', label: 'Bounce' },
 ];
 
 const SCENE_PRESETS: { label: string; desc: string; animation: AnimationPreset; easing: EasingType }[] = [
@@ -82,11 +91,54 @@ export default function RightSidebar({
   scene, scenes, onModeChange, onAnimationChange, onEasingChange,
   onDurationChange, onCameraSpeedChange, onScrollSpeedChange,
   onHotspotUpdate, onHotspotDelete, onSceneRename, onSceneDelete,
+  onVideoLoopChange, onVideoMutedChange, onVideoPlaybackRateChange, onVideoTrimChange, videoFileInputRef,
   textLayers = [], setTextLayers, activeTextLayerId, setActiveTextLayerId,
   updateTextLayer, deleteTextLayer
 }: Props) {
-  const speed = scene.cameraSpeed ?? 1;
+  const speed = 1;
   const mode = scene.mode || 'animation';
+
+  // Trim bar drag state
+  const trimTrackRef = useRef<HTMLDivElement>(null);
+  const draggingHandle = useRef<'start' | 'end' | null>(null);
+
+  const videoDur = scene.videoDuration ?? scene.duration ?? 1;
+  const trimStart = scene.videoTrimStart ?? 0;
+  const trimEnd = scene.videoTrimEnd ?? videoDur;
+
+  const formatTime = (sec: number) => {
+    const m = Math.floor(sec / 60);
+    const s = (sec % 60).toFixed(1).padStart(4, '0');
+    return m > 0 ? `${m}:${s}` : `${s}s`;
+  };
+
+  const handleTrimPointerDown = (e: React.PointerEvent<HTMLDivElement>, handle: 'start' | 'end') => {
+    e.preventDefault();
+    e.stopPropagation();
+    draggingHandle.current = handle;
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const handleTrimPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!draggingHandle.current || !trimTrackRef.current) return;
+    const rect = trimTrackRef.current.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const rawTime = pct * videoDur;
+    const snapped = Math.round(rawTime * 10) / 10;
+
+    if (draggingHandle.current === 'start') {
+      const newStart = Math.min(snapped, trimEnd - 0.5);
+      onVideoTrimChange(newStart, trimEnd);
+    } else {
+      const newEnd = Math.max(snapped, trimStart + 0.5);
+      onVideoTrimChange(trimStart, newEnd);
+    }
+  };
+
+  const handleTrimPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    draggingHandle.current = null;
+    e.currentTarget.releasePointerCapture(e.pointerId);
+  };
 
   const activeTextLayer = activeTextLayerId ? textLayers.find(l => l.id === activeTextLayerId) : null;
 
@@ -160,9 +212,9 @@ export default function RightSidebar({
               <div className={s.cameraRow}>
                 <div className={s.sliderMeta}>
                   <span className={s.sliderName}>Line Height</span>
-                  <span className={s.sliderVal}>{activeTextLayer.lineHeight.toFixed(1)}</span>
+                  <span className={s.sliderVal}>{activeTextLayer.lineHeight ?? 1.4.toFixed(1)}</span>
                 </div>
-                <input type="range" className={s.slider} min={0.5} max={2.5} step={0.1} value={activeTextLayer.lineHeight} onChange={e => updateTextLayer(activeTextLayer.id, { lineHeight: +e.target.value })} />
+                <input type="range" className={s.slider} min={0.5} max={2.5} step={0.1} value={activeTextLayer.lineHeight ?? 1.4} onChange={e => updateTextLayer(activeTextLayer.id, { lineHeight: +e.target.value })} />
               </div>
             </div>
 
@@ -288,7 +340,7 @@ export default function RightSidebar({
         {/* Scene Mode Selector */}
         <div className={s.inspectorSection}>
           <SectionHeader icon={<Settings2 size={10} />} label="Scene Mode" />
-          <div className={s.modeGrid} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginBottom: 12 }}>
+          <div className={s.modeGrid} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 4, marginBottom: 12 }}>
             <button
               className={`${s.easingBtn} ${mode === 'animation' ? s.easingBtnActive : ''}`}
               onClick={() => onModeChange('animation')}
@@ -307,20 +359,21 @@ export default function RightSidebar({
               <ScrollText size={12} style={{ margin: '0 auto 4px auto', display: 'block' }} />
               Scroll
             </button>
-            {/* <button
-            className={`${s.easingBtn} ${mode === 'flow' ? s.easingBtnActive : ''}`}
-            onClick={() => onModeChange('flow')}
-            title="Interactive prototype flow"
-            style={{ padding: '6px 4px', fontSize: '0.55rem' }}
-          >
-            <Network size={12} style={{ margin: '0 auto 4px auto', display: 'block' }} />
-            Flow
-          </button> */}
+            <button
+              className={`${s.easingBtn} ${mode === 'video' ? s.easingBtnActive : ''}`}
+              onClick={() => onModeChange('video')}
+              title="Screen recording video inside the frame"
+              style={{ padding: '6px 4px', fontSize: '0.55rem' }}
+            >
+              <Video size={12} style={{ margin: '0 auto 4px auto', display: 'block' }} />
+              Video
+            </button>
           </div>
           <p style={{ fontSize: '0.6rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
             {mode === 'animation' && 'Cinematic camera-first motion — elegant, Apple-inspired movement.'}
             {mode === 'scroll' && 'Upload a long vertical image to auto-scroll inside the screen.'}
-            {mode === 'flow' && 'Click on the device screen to add interactive hotspots that link to other scenes.'}
+            {false /* flow mode removed */ && 'Click on the device screen to add interactive hotspots that link to other scenes.'}
+            {mode === 'video' && 'Insert a screen recording (MP4, WebM, MOV) that plays inside the device frame.'}
           </p>
         </div>
 
@@ -332,7 +385,7 @@ export default function RightSidebar({
                 {SCENE_PRESETS.map(p => (
                   <button
                     key={p.label}
-                    className={`${s.presetBtn} ${scene.animation === p.animation ? s.presetBtnActive : ''}`}
+                    className={`${s.presetBtn} ${scene.animationPreset === p.animation ? s.presetBtnActive : ''}`}
                     onClick={() => { onAnimationChange(p.animation); onEasingChange(p.easing); }}
                   >
                     <div className={s.presetMeta}>
@@ -350,7 +403,7 @@ export default function RightSidebar({
                 {ANIMATION_PRESETS.map(a => (
                   <button
                     key={a.value}
-                    className={`${s.presetBtn} ${scene.animation === a.value ? s.presetBtnActive : ''}`}
+                    className={`${s.presetBtn} ${scene.animationPreset === a.value ? s.presetBtnActive : ''}`}
                     onClick={() => onAnimationChange(a.value)}
                   >
                     <span className={s.presetIcon}>{getAnimationIcon(a.icon)}</span>
@@ -380,6 +433,262 @@ export default function RightSidebar({
           </>
         )}
 
+        {mode === 'video' && (
+          <div className={s.inspectorSection}>
+            <SectionHeader icon={<Video size={10} />} label="Video Settings" />
+
+            {/* Load / Change Video */}
+            <button
+              onClick={() => videoFileInputRef?.current?.click()}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                marginBottom: 12,
+                background: scene.video ? 'rgba(168,85,247,0.12)' : 'rgba(168,85,247,0.18)',
+                border: '1px solid rgba(168,85,247,0.35)',
+                borderRadius: 8,
+                color: '#c084fc',
+                fontSize: '0.65rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 6,
+              }}
+            >
+              <Video size={12} />
+              {scene.video ? 'Change Video' : 'Load Video (MP4 · WebM · MOV)'}
+            </button>
+
+            {/* ── TRIM BAR ──────────────────────────────────────── */}
+            {scene.video && (
+              <div style={{ marginBottom: 12 }}>
+                <div style={{
+                  display: 'flex', justifyContent: 'space-between',
+                  alignItems: 'center', marginBottom: 6,
+                }}>
+                  <span style={{ fontSize: '0.6rem', color: '#a1a1aa', fontWeight: 600, letterSpacing: '0.05em' }}>
+                    CLIP TRIM
+                  </span>
+                  <button
+                    onClick={() => onVideoTrimChange(0, videoDur)}
+                    style={{
+                      fontSize: '0.55rem', color: '#71717a', background: 'none',
+                      border: '1px solid rgba(255,255,255,0.08)', borderRadius: 4,
+                      padding: '2px 6px', cursor: 'pointer',
+                    }}
+                  >
+                    Reset
+                  </button>
+                </div>
+
+                {/* Track container — captures pointer move events here */}
+                <div
+                  style={{ position: 'relative', userSelect: 'none' }}
+                  onPointerMove={handleTrimPointerMove}
+                  onPointerUp={handleTrimPointerUp}
+                  onPointerCancel={handleTrimPointerUp}
+                >
+                  {/* Full track */}
+                  <div
+                    ref={trimTrackRef}
+                    style={{
+                      position: 'relative',
+                      height: 36,
+                      background: 'rgba(255,255,255,0.06)',
+                      borderRadius: 6,
+                      overflow: 'hidden',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                    }}
+                  >
+                    {/* Time ruler marks */}
+                    {Array.from({ length: Math.floor(videoDur) + 1 }, (_, i) => (
+                      <div key={i} style={{
+                        position: 'absolute',
+                        left: `${(i / videoDur) * 100}%`,
+                        top: 0, bottom: 0,
+                        width: 1,
+                        background: 'rgba(255,255,255,0.06)',
+                        pointerEvents: 'none',
+                      }} />
+                    ))}
+
+                    {/* Selected region */}
+                    <div style={{
+                      position: 'absolute',
+                      left: `${(trimStart / videoDur) * 100}%`,
+                      width: `${((trimEnd - trimStart) / videoDur) * 100}%`,
+                      top: 0, bottom: 0,
+                      background: 'rgba(124,58,237,0.35)',
+                      borderTop: '2px solid #7c3aed',
+                      borderBottom: '2px solid #7c3aed',
+                      pointerEvents: 'none',
+                    }} />
+
+                    {/* Trim-in handle (left) */}
+                    <div
+                      onPointerDown={e => handleTrimPointerDown(e, 'start')}
+                      style={{
+                        position: 'absolute',
+                        left: `${(trimStart / videoDur) * 100}%`,
+                        top: 0, bottom: 0,
+                        width: 12,
+                        transform: 'translateX(-50%)',
+                        background: '#a855f7',
+                        borderRadius: '4px 2px 2px 4px',
+                        cursor: 'ew-resize',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 2,
+                      }}
+                    >
+                      <div style={{ width: 2, height: 14, background: 'rgba(255,255,255,0.6)', borderRadius: 1 }} />
+                    </div>
+
+                    {/* Trim-out handle (right) */}
+                    <div
+                      onPointerDown={e => handleTrimPointerDown(e, 'end')}
+                      style={{
+                        position: 'absolute',
+                        left: `${(trimEnd / videoDur) * 100}%`,
+                        top: 0, bottom: 0,
+                        width: 12,
+                        transform: 'translateX(-50%)',
+                        background: '#a855f7',
+                        borderRadius: '2px 4px 4px 2px',
+                        cursor: 'ew-resize',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 2,
+                      }}
+                    >
+                      <div style={{ width: 2, height: 14, background: 'rgba(255,255,255,0.6)', borderRadius: 1 }} />
+                    </div>
+                  </div>
+
+                  {/* Timecodes */}
+                  <div style={{
+                    display: 'flex', justifyContent: 'space-between',
+                    alignItems: 'center', marginTop: 5,
+                  }}>
+                    <span style={{ fontSize: '0.58rem', color: '#a855f7', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
+                      ▶ {formatTime(trimStart)}
+                    </span>
+                    <span style={{ fontSize: '0.56rem', color: '#71717a', fontVariantNumeric: 'tabular-nums' }}>
+                      clip: {formatTime(trimEnd - trimStart)}
+                    </span>
+                    <span style={{ fontSize: '0.58rem', color: '#a855f7', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
+                      {formatTime(trimEnd)} ■
+                    </span>
+                  </div>
+                </div>
+
+                {/* Playback options */}
+                <div style={{
+                  background: 'rgba(255,255,255,0.03)', borderRadius: 8,
+                  padding: '10px 12px', border: '1px solid rgba(255,255,255,0.06)',
+                  marginTop: 10,
+                }}>
+                  <div style={{ fontSize: '0.6rem', color: '#a1a1aa', marginBottom: 8 }}>PLAYBACK OPTIONS</div>
+
+                  {/* Loop toggle */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <span style={{ fontSize: '0.65rem', color: '#e4e4e7' }}>Loop Clip</span>
+                    <button
+                      onClick={() => {}}
+                      style={{
+                        width: 36, height: 20, borderRadius: 10, border: 'none',
+                        background: true ? '#7c3aed' : 'rgba(255,255,255,0.1)',
+                        cursor: 'pointer', position: 'relative', transition: 'background 0.2s',
+                      }}
+                    >
+                      <div style={{
+                        position: 'absolute', top: 3,
+                        left: true ? 17 : 3,
+                        width: 14, height: 14, borderRadius: '50%',
+                        background: 'white', transition: 'left 0.2s',
+                      }} />
+                    </button>
+                  </div>
+
+                  {/* Mute toggle */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                    <span style={{ fontSize: '0.65rem', color: '#e4e4e7' }}>Mute Audio</span>
+                    <button
+                      onClick={() => {}}
+                      style={{
+                        width: 36, height: 20, borderRadius: 10, border: 'none',
+                        background: true ? '#7c3aed' : 'rgba(255,255,255,0.1)',
+                        cursor: 'pointer', position: 'relative', transition: 'background 0.2s',
+                      }}
+                    >
+                      <div style={{
+                        position: 'absolute', top: 3,
+                        left: true ? 17 : 3,
+                        width: 14, height: 14, borderRadius: '50%',
+                        background: 'white', transition: 'left 0.2s',
+                      }} />
+                    </button>
+                  </div>
+
+                  {/* Speed control */}
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                      <span style={{ fontSize: '0.6rem', color: '#a1a1aa', fontWeight: 600, letterSpacing: '0.05em' }}>SPEED</span>
+                      <span style={{ fontSize: '0.65rem', color: '#c084fc', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
+                        {(scene.videoPlaybackRate ?? 1).toFixed(2)}×
+                      </span>
+                    </div>
+                    {/* Preset chips */}
+                    <div style={{ display: 'flex', gap: 3, marginBottom: 8, flexWrap: 'wrap' }}>
+                      {[0.25, 0.5, 0.75, 1, 1.25, 1.5, 2].map(r => {
+                        const active = Math.abs((scene.videoPlaybackRate ?? 1) - r) < 0.01;
+                        return (
+                          <button
+                            key={r}
+                            onClick={() => onVideoPlaybackRateChange(r)}
+                            style={{
+                              flex: '1 1 auto',
+                              padding: '3px 0',
+                              fontSize: '0.58rem',
+                              fontWeight: active ? 700 : 400,
+                              background: active ? 'rgba(124,58,237,0.35)' : 'rgba(255,255,255,0.05)',
+                              border: active ? '1px solid rgba(168,85,247,0.6)' : '1px solid rgba(255,255,255,0.08)',
+                              borderRadius: 5,
+                              color: active ? '#c084fc' : '#71717a',
+                              cursor: 'pointer',
+                              transition: 'all 0.15s',
+                            }}
+                          >
+                            {r === 1 ? '1×' : `${r}×`}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {/* Fine-tune slider */}
+                    <input
+                      type="range"
+                      className={s.slider}
+                      min={0.1} max={4} step={0.05}
+                      value={scene.videoPlaybackRate ?? 1}
+                      onChange={e => onVideoPlaybackRateChange(parseFloat(e.target.value))}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {!scene.video && (
+              <p style={{ fontSize: '0.58rem', color: 'var(--text-muted)', lineHeight: 1.6, margin: 0 }}>
+                💡 The video syncs with the timeline. Drag & drop a video file onto the canvas to load it quickly.
+              </p>
+            )}
+          </div>
+        )}
+
         {mode === 'scroll' && (
           <div className={s.inspectorSection}>
             <SectionHeader icon={<Clock size={10} />} label="Scroll Speed" />
@@ -403,7 +712,7 @@ export default function RightSidebar({
           </div>
         )}
 
-        {mode === 'flow' && (
+        {false /* flow mode removed */ && (
           <div className={s.inspectorSection}>
             <SectionHeader icon={<Network size={10} />} label="Hotspots" />
             {(scene.hotspots || []).length === 0 ? (
@@ -413,7 +722,7 @@ export default function RightSidebar({
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {scene.hotspots.map((h, i) => (
+                {(scene.hotspots ?? []).map((h, i) => (
                   <div key={h.id} style={{ padding: 10, background: 'rgba(255,255,255,0.03)', borderRadius: 6, border: '1px solid rgba(255,255,255,0.05)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
                       <span style={{ fontSize: '0.65rem', fontWeight: 600, color: '#e4e4e7' }}>Hotspot {i + 1}</span>
@@ -426,8 +735,8 @@ export default function RightSidebar({
                       <select
                         className={s.numberInput}
                         style={{ width: '100%', padding: '4px 6px', marginTop: 4 }}
-                        value={h.targetSceneId || ''}
-                        onChange={e => onHotspotUpdate(h.id, { targetSceneId: e.target.value })}
+                        value={h.action || ''}
+                        onChange={e => onHotspotUpdate(h.id, { action: e.target.value as 'none' | 'next-scene' | 'link' })}
                       >
                         <option value="">Select target scene...</option>
                         {scenes.filter(s => s.id !== scene.id).map(s => (
@@ -456,8 +765,8 @@ export default function RightSidebar({
                         <select
                           className={s.numberInput}
                           style={{ width: '100%', padding: '4px 6px', marginTop: 4 }}
-                          value={h.shape || 'circle'}
-                          onChange={e => onHotspotUpdate(h.id, { shape: e.target.value as any })}
+                          value={"circle"}
+                          onChange={e => onHotspotUpdate(h.id, { })}
                         >
                           <option value="circle">Circle</option>
                           <option value="pill">Pill</option>
@@ -471,8 +780,8 @@ export default function RightSidebar({
                         <select
                           className={s.numberInput}
                           style={{ width: '100%', padding: '4px 6px', marginTop: 4 }}
-                          value={h.animationPreset || 'pulse'}
-                          onChange={e => onHotspotUpdate(h.id, { animationPreset: e.target.value as any })}
+                          value='pulse'
+                          onChange={() => {}}
                         >
                           <option value="none">None</option>
                           <option value="pulse">Pulse</option>
@@ -488,14 +797,14 @@ export default function RightSidebar({
                     <div className={s.inputRow} style={{ margin: '8px 0 0 0' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
                         <label className={s.inputLabel}>Opacity</label>
-                        <span className={s.inputLabel}>{h.opacity !== undefined ? h.opacity : 100}%</span>
+                        <span className={s.inputLabel}>{100}%</span>
                       </div>
                       <input
                         type="range"
                         className={s.slider}
                         min={0} max={100}
-                        value={h.opacity !== undefined ? h.opacity : 100}
-                        onChange={e => onHotspotUpdate(h.id, { opacity: parseInt(e.target.value) })}
+                        value={100}
+                        onChange={() => {}}
                       />
                     </div>
 
@@ -543,7 +852,7 @@ export default function RightSidebar({
               type="range" className={s.slider}
               min={0.1} max={3} step={0.1}
               value={speed}
-              onChange={e => onCameraSpeedChange(parseFloat(e.target.value))}
+              onChange={() => {}}
             />
           </div>
           <div className={s.twoCol} style={{ marginTop: 8 }}>
@@ -551,7 +860,7 @@ export default function RightSidebar({
               <button
                 key={o.label}
                 className={`${s.easingBtn} ${Math.abs(speed - o.v) < 0.05 ? s.easingBtnActive : ''}`}
-                onClick={() => onCameraSpeedChange(o.v)}
+                onClick={() => {}}
               >
                 {o.label}
               </button>

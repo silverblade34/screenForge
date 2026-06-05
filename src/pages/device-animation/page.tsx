@@ -12,7 +12,7 @@ import type { Transition } from 'framer-motion';
 import {
   SceneScene, CameraState, Layer, BackgroundOption, AnimationPreset, EasingType,
   DeviceModel, FrameColor, FlowHotspot, TextLayer, TEXT_BLOCKS, FONT_PRESETS,
-  DEFAULT_SCENES, DEFAULT_LAYERS, DEFAULT_CAMERA, BACKGROUNDS,
+  DEFAULT_SCENES, DEFAULT_LAYERS, DEFAULT_CAMERA, BACKGROUNDS, MediaAsset
 } from './types';
 
 // Custom hook for localStorage persistence
@@ -39,11 +39,12 @@ function usePersistedState<T>(key: string, defaultValue: T): [T, React.Dispatch<
 import LeftSidebar from './LeftSidebar';
 import RightSidebar from './RightSidebar';
 import StudioTimeline from './StudioTimeline';
-import CanvasArea from './CanvasArea';
+import KonvaStage, { type KonvaStageHandle } from './KonvaStage';
 import { ExportDialog } from '@/components/export/ExportDialog';
 import { ExportProgress } from '@/components/export/ExportProgress';
 import { exportVideo } from '@/lib/export/videoExporter';
 import { ExportSettings } from '@/lib/export/videoExporter';
+import { KonvaExportRenderer } from '@/lib/export/KonvaExportRenderer';
 import s from './page.module.css';
 
 /* ─── Animation variant builder ──────────────────────────────────────────────
@@ -199,6 +200,208 @@ function getVariants(animation: AnimationPreset, _easing: EasingType) {
   }
 }
 
+function MediaPickerModal({
+  library,
+  onClose,
+  onSelect,
+  onDelete,
+  onUpload
+}: {
+  library: MediaAsset[];
+  onClose: () => void;
+  onSelect: (asset: MediaAsset) => void;
+  onDelete: (id: string) => void;
+  onUpload: () => void;
+}) {
+  return (
+    <div
+      style={{
+        position: 'fixed', inset: 0, zIndex: 9999,
+        background: 'rgba(0,0,0,0.75)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          width: 560, maxHeight: '80vh',
+          background: 'linear-gradient(145deg, rgba(20,20,24,0.98) 0%, rgba(10,10,14,0.99) 100%)',
+          border: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: 20,
+          overflow: 'hidden',
+          display: 'flex', flexDirection: 'column',
+          boxShadow: '0 40px 120px rgba(0,0,0,0.7), 0 0 0 1px rgba(168,85,247,0.06)',
+        }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '18px 22px 16px',
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{
+              width: 28, height: 28, borderRadius: 8,
+              background: 'linear-gradient(135deg, rgba(124,58,237,0.3), rgba(99,102,241,0.2))',
+              border: '1px solid rgba(168,85,247,0.25)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#a855f7" strokeWidth="2">
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+            </div>
+            <div>
+              <h3 style={{ fontSize: '0.88rem', fontWeight: 700, color: 'white', margin: 0, letterSpacing: '-0.02em' }}>
+                Media Library
+              </h3>
+              <p style={{ fontSize: '0.65rem', color: '#52525b', margin: 0, marginTop: 1 }}>
+                {library.length} {library.length === 1 ? 'asset' : 'assets'} · Click to select
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            style={{
+              width: 26, height: 26, borderRadius: 6,
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.06)',
+              color: '#52525b', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 16, lineHeight: 1, transition: 'all 0.15s',
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#fff'; (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#52525b'; (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; }}
+          >×</button>
+        </div>
+
+        {/* Content */}
+        <div style={{ overflowY: 'auto', padding: '16px 20px 20px', flex: 1 }}>
+          {/* Upload Button */}
+          <button
+            onClick={onUpload}
+            style={{
+              width: '100%', padding: '14px',
+              background: 'rgba(255,255,255,0.02)',
+              border: '1.5px dashed rgba(255,255,255,0.12)',
+              borderRadius: 12, cursor: 'pointer',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+              color: '#71717a', transition: 'all 0.2s', marginBottom: 16,
+            }}
+            onMouseEnter={e => {
+              const el = e.currentTarget as HTMLElement;
+              el.style.borderColor = 'rgba(168,85,247,0.4)';
+              el.style.background = 'rgba(168,85,247,0.05)';
+              el.style.color = '#a855f7';
+            }}
+            onMouseLeave={e => {
+              const el = e.currentTarget as HTMLElement;
+              el.style.borderColor = 'rgba(255,255,255,0.12)';
+              el.style.background = 'rgba(255,255,255,0.02)';
+              el.style.color = '#71717a';
+            }}
+          >
+            <div style={{
+              width: 36, height: 36, borderRadius: 10,
+              background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <Plus size={18} />
+            </div>
+            <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>Upload Media</span>
+            <span style={{ fontSize: '0.62rem', opacity: 0.5 }}>Images, videos, GIFs</span>
+          </button>
+
+          {/* Media Grid */}
+          {library.length > 0 ? (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+              {library.map(asset => (
+                <div
+                  key={asset.id}
+                  style={{
+                    position: 'relative', borderRadius: 10, overflow: 'hidden',
+                    aspectRatio: '9/16', cursor: 'pointer',
+                    border: '1.5px solid rgba(255,255,255,0.06)',
+                    transition: 'all 0.2s',
+                    background: '#111',
+                  }}
+                  onClick={() => onSelect(asset)}
+                  onMouseEnter={e => {
+                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(168,85,247,0.5)';
+                    (e.currentTarget as HTMLElement).style.boxShadow = '0 0 0 2px rgba(168,85,247,0.2)';
+                    const overlay = (e.currentTarget as HTMLElement).querySelector('.card-overlay') as HTMLElement;
+                    if (overlay) overlay.style.opacity = '1';
+                  }}
+                  onMouseLeave={e => {
+                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.06)';
+                    (e.currentTarget as HTMLElement).style.boxShadow = 'none';
+                    const overlay = (e.currentTarget as HTMLElement).querySelector('.card-overlay') as HTMLElement;
+                    if (overlay) overlay.style.opacity = '0';
+                  }}
+                >
+                  {asset.type === 'image' ? (
+                    <img src={asset.url} alt={asset.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                  ) : (
+                    <video src={asset.url} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} muted />
+                  )}
+                  {/* Hover overlay */}
+                  <div
+                    className="card-overlay"
+                    style={{
+                      position: 'absolute', inset: 0, opacity: 0, transition: 'opacity 0.2s',
+                      background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 50%)',
+                      display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
+                      padding: '8px',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      {asset.type === 'video' && <Clapperboard size={10} style={{ color: '#d8b4fe' }} />}
+                      <span style={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.7)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {asset.name}
+                      </span>
+                    </div>
+                  </div>
+                  {/* Delete button */}
+                  <button
+                    style={{
+                      position: 'absolute', top: 6, right: 6,
+                      width: 22, height: 22, borderRadius: 6,
+                      background: 'rgba(239,68,68,0.85)', backdropFilter: 'blur(8px)',
+                      border: 'none', color: 'white', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      opacity: 0, transition: 'opacity 0.2s',
+                    }}
+                    className="card-delete"
+                    onClick={e => { e.stopPropagation(); onDelete(asset.id); }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '1'; }}
+                  >
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <polyline points="3 6 5 6 21 6"/>
+                      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                    </svg>
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{
+              textAlign: 'center', padding: '32px 16px',
+              color: '#3f3f46', fontSize: '0.75rem',
+            }}>
+              <div style={{ fontSize: 32, marginBottom: 8 }}>📂</div>
+              No media yet. Upload images or videos to get started.
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Main Page ──────────────────────────────────────────────── */
 export default function CinematicStudioPage() {
   const { addToast } = useToastStore();
@@ -265,7 +468,7 @@ export default function CinematicStudioPage() {
 
   // Device
   const [device, setDevice] = usePersistedState<DeviceModel>('screenforge_anim_device', 'iphone-16-pro');
-  const [frameColor, setFrameColor] = usePersistedState<FrameColor>('screenforge_anim_frameColor', 'spaceBlack');
+  const [frameColor, setFrameColor] = usePersistedState<FrameColor>('screenforge_anim_frameColor', 'black');
   const [background, setBackground] = usePersistedState<BackgroundOption>('screenforge_anim_background', BACKGROUNDS[0]);
   const [browserVariant, setBrowserVariant] = usePersistedState<any>('screenforge_anim_browserVariant', 'safari-light');
 
@@ -279,6 +482,11 @@ export default function CinematicStudioPage() {
   const [editingTextLayerId, setEditingTextLayerId] = useState<string | null>(null);
   const [showTextBlockMenu, setShowTextBlockMenu] = useState(false);
   const textMenuContainerRef = useRef<HTMLDivElement>(null);
+
+  // Media Library
+  const [mediaLibrary, setMediaLibrary] = useState<MediaAsset[]>([]);
+  const [showMediaPicker, setShowMediaPicker] = useState(false);
+
 
   const draggingLayerRef = useRef<string | null>(null);
   const dragStartRef = useRef<{ mx: number; my: number; sx: number; sy: number } | null>(null);
@@ -335,17 +543,17 @@ export default function CinematicStudioPage() {
     const dur = Math.min(3, maxDur);
 
     const newLayer: TextLayer = {
-      id, type: block.type, text: block.text,
+      id, type: block.type ?? 'caption', text: block.text ?? '',
       x: 50, y: 50, width: 700, align: 'center',
       fontFamily: FONT_PRESETS[0].font, fontPreset: 'modern',
-      fontSize: block.fontSize, fontWeight: block.fontWeight,
-      letterSpacing: block.letterSpacing, lineHeight: block.lineHeight,
-      color: block.color, opacity: 1, glow: 0,
+      fontSize: block.fontSize ?? 20, fontWeight: block.fontWeight ?? 400,
+      letterSpacing: block.letterSpacing ?? 0, lineHeight: block.lineHeight ?? 1.4,
+      color: block.color ?? '#ffffff', opacity: block.opacity ?? 100, glow: block.glow ?? 0,
       gradient: block.gradient ?? false, gradientFrom: '#a855f7', gradientTo: '#6366f1',
       shadow: false, zIndex: textLayers.length + 10,
       startTime: currentTime,
       duration: dur,
-      animationIn: 'fade'
+      animationIn: block.animationIn ?? 'fade'
     };
     setTextLayers(prev => [...prev, newLayer]);
     setActiveTextLayerId(id);
@@ -357,6 +565,7 @@ export default function CinematicStudioPage() {
   };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoFileInputRef = useRef<HTMLInputElement>(null);
 
   // Playback
   const [isPlaying, setIsPlaying] = useState(false);
@@ -372,12 +581,19 @@ export default function CinematicStudioPage() {
   const [exportProgressVal, setExportProgressVal] = useState(0);
   const [exportCurrentFrame, setExportCurrentFrame] = useState(0);
   const [exportTotalFrames, setExportTotalFrames] = useState(0);
-  const [exportError, setExportError] = useState<string | null>(null);
+  const [exportError, setExportError] = useState<string | undefined>(undefined);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<BlobPart[]>([]); 
 
   // Ref for the canvas viewport DOM element — used by the DOM-capture exporter
   const canvasViewportRef = useRef<HTMLDivElement | null>(null);
+
+  // Konva stage ref — used by KonvaExportRenderer when ?konva=1 is in the URL
+  const konvaStageRef = useRef<KonvaStageHandle | null>(null);
+
+  // Toggle: add ?konva=1 to the URL to activate the Konva rendering pipeline
+  const useKonvaMode = typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).get('konva') === '1';
 
   const totalDuration = useMemo(
     () => scenes.reduce((sum, sc) => sum + sc.duration, 0),
@@ -461,6 +677,13 @@ export default function CinematicStudioPage() {
     const reader = new FileReader();
     reader.onload = ev => {
       const dataUrl = ev.target?.result as string;
+      const newAsset: MediaAsset = {
+        id: Math.random().toString(36).substring(7),
+        type: 'image',
+        url: dataUrl,
+        name: file.name
+      };
+      setMediaLibrary(prev => [newAsset, ...prev]);
       setScenes(prev => prev.map(sc => sc.id === activeScene.id ? { ...sc, image: dataUrl } : sc));
       addToast('Screenshot loaded ✓', 'success');
     };
@@ -474,9 +697,93 @@ export default function CinematicStudioPage() {
       const reader = new FileReader();
       reader.onload = ev => {
         const dataUrl = ev.target?.result as string;
+        const newAsset: MediaAsset = {
+          id: Math.random().toString(36).substring(7),
+          type: 'image',
+          url: dataUrl,
+          name: file.name
+        };
+        setMediaLibrary(prev => [newAsset, ...prev]);
         setScenes(prev => prev.map(sc => sc.id === activeScene.id ? { ...sc, image: dataUrl } : sc));
       };
       reader.readAsDataURL(file);
+    } else if (file?.type.startsWith('video/')) {
+      const reader = new FileReader();
+      reader.onload = ev => {
+        const dataUrl = ev.target?.result as string;
+        const tmpVid = document.createElement('video');
+        tmpVid.preload = 'metadata';
+        tmpVid.onloadedmetadata = () => {
+          const dur = Math.round(tmpVid.duration * 10) / 10;
+          URL.revokeObjectURL(tmpVid.src);
+          const sceneId = activeScene.id;
+          const newAsset: MediaAsset = {
+            id: Math.random().toString(36).substring(7),
+            type: 'video',
+            url: dataUrl,
+            name: file.name
+          };
+          setMediaLibrary(prev => [newAsset, ...prev]);
+          setScenes(prev => prev.map(sc => sc.id === sceneId
+            ? { ...sc, video: dataUrl, mode: 'video', duration: dur, scrollSpeed: dur,
+                videoDuration: dur, videoTrimStart: 0, videoTrimEnd: dur }
+            : sc
+          ));
+          addToast(`Video cargado ✓  (${dur}s)`, 'success');
+        };
+        tmpVid.src = URL.createObjectURL(file);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleVideoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const tmpVid = document.createElement('video');
+    tmpVid.preload = 'metadata';
+    tmpVid.onloadedmetadata = () => {
+      const dur = Math.round(tmpVid.duration * 10) / 10;
+      URL.revokeObjectURL(tmpVid.src);
+      const reader = new FileReader();
+      const sceneId = activeScene.id;
+      reader.onload = ev => {
+        const dataUrl = ev.target?.result as string;
+        const newAsset: MediaAsset = {
+          id: Math.random().toString(36).substring(7),
+          type: 'video',
+          url: dataUrl,
+          name: file.name
+        };
+        setMediaLibrary(prev => [newAsset, ...prev]);
+        setScenes(prev => prev.map(sc => sc.id === sceneId
+          ? { ...sc, video: dataUrl, mode: 'video', duration: dur, scrollSpeed: dur,
+              videoDuration: dur, videoTrimStart: 0, videoTrimEnd: dur }
+          : sc
+        ));
+        addToast(`Video cargado ✓  (${dur}s)`, 'success');
+      };
+      reader.readAsDataURL(file);
+    };
+    tmpVid.src = URL.createObjectURL(file);
+    e.target.value = '';
+  };
+
+
+  const handleRemoveMedia = () => {
+    const id = activeScene.id;
+    if (activeScene.mode === 'video') {
+      setScenes(prev => prev.map(sc => sc.id === id
+        ? { ...sc, video: undefined, mode: 'animation' as const }
+        : sc
+      ));
+      addToast('Video removed', 'success');
+    } else {
+      setScenes(prev => prev.map(sc => sc.id === id
+        ? { ...sc, image: undefined }
+        : sc
+      ));
+      addToast('Image removed', 'success');
     }
   };
 
@@ -484,7 +791,96 @@ export default function CinematicStudioPage() {
     setShowExportDialog(true);
   };
 
-  const executeExport = async (settings: Omit<ExportSettings, 'canvasElement' | 'onSeekFrame' | 'onProgress'>) => {
+  const executeExport = async (settings: Omit<ExportSettings, 'stage' | 'onSeekFrame' | 'onProgress'>) => {
+    // ── Konva path ────────────────────────────────────────────────────────────
+    const konvaStage = konvaStageRef.current?.stage;
+    if (useKonvaMode && konvaStage) {
+      setShowExportDialog(false);
+      setExportPhase('rendering');
+      setExportProgressVal(0);
+      setExportError(undefined);
+      setIsExporting(true);
+
+      const renderer = new KonvaExportRenderer(konvaStage);
+
+      // Build a synthetic ExportSettings with a fake canvasElement so we can
+      // reuse the existing exportVideo loop — only the renderer changes.
+      const { width, height, fps, duration, quality } = settings;
+      const totalFrames = Math.floor(duration * fps);
+
+      try {
+        // Import FFmpeg lazily (same as videoExporter.ts)
+        const { getFFmpeg } = await import('@/lib/export/ffmpeg');
+        const ffmpeg = await getFFmpeg();
+
+        let crf = '23';
+        if (quality === 'High')  crf = '18';
+        if (quality === 'Ultra') crf = '14';
+
+        for (let i = 0; i < totalFrames; i++) {
+          const time = i / fps;
+          setCurrentTime(time);
+          // Wait two rAFs for Konva to repaint
+          await new Promise<void>(r => requestAnimationFrame(() => requestAnimationFrame(() => r())));
+
+          const blob = await renderer.captureFrame();
+          const arrayBuffer = await blob.arrayBuffer();
+          const fileName = `frame_${String(i).padStart(4, '0')}.png`;
+          await ffmpeg.writeFile(fileName, new Uint8Array(arrayBuffer));
+
+          setExportPhase('rendering');
+          setExportProgressVal((i + 1) / totalFrames);
+          setExportCurrentFrame(i + 1);
+          setExportTotalFrames(totalFrames);
+
+          await new Promise(r => setTimeout(r, 0));
+        }
+
+        setExportPhase('encoding');
+        ffmpeg.on('progress', ({ progress }) => {
+          setExportProgressVal(Math.max(0, Math.min(1, progress ?? 0)));
+        });
+
+        await ffmpeg.exec([
+          '-framerate', String(fps),
+          '-i', 'frame_%04d.png',
+          '-c:v', 'libx264',
+          '-pix_fmt', 'yuv420p',
+          '-preset', 'ultrafast',
+          '-crf', crf,
+          '-vf', `scale=${width}:${height}:flags=lanczos`,
+          'output.mp4',
+        ]);
+
+        const data = await ffmpeg.readFile('output.mp4');
+        const mp4Blob = new Blob([data as unknown as ArrayBuffer], { type: 'video/mp4' });
+        const url = URL.createObjectURL(mp4Blob);
+
+        // Cleanup ffmpeg FS
+        for (let i = 0; i < totalFrames; i++) {
+          try { await ffmpeg.deleteFile(`frame_${String(i).padStart(4, '0')}.png`); } catch {}
+        }
+        try { await ffmpeg.deleteFile('output.mp4'); } catch {}
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `screenforge-export-${Date.now()}.mp4`;
+        a.click();
+        URL.revokeObjectURL(url);
+        addToast('Video exported successfully! (Konva)', 'success');
+        setIsExporting(false);
+        setExportPhase(null);
+        return;
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        setExportError(msg);
+        setExportPhase(null);
+        setIsExporting(false);
+        return;
+      }
+    }
+
+    // ── Legacy DOM path (html2canvas) ────────────────────────────────────────
     if (!canvasViewportRef.current) {
       addToast('Canvas not ready for export', 'error');
       return;
@@ -493,17 +889,17 @@ export default function CinematicStudioPage() {
     setShowExportDialog(false);
     setExportPhase('rendering');
     setExportProgressVal(0);
-    setExportError(null);
+    setExportError(undefined);
     setIsExporting(true);
 
     // Snapshot the element reference before the async loop
-    const el = canvasViewportRef.current;
-    console.log('[page] executeExport: starting export, canvas size =', el.offsetWidth, 'x', el.offsetHeight);
+    if (!konvaStageRef.current?.stage) { addToast('Error: Stage not ready', 'error'); setIsExporting(false); return; }
+    console.log('[page] executeExport: starting export');
 
     try {
       const url = await exportVideo({
         ...settings,
-        canvasElement: el,
+        stage: konvaStageRef.current?.stage!,
         // Called for each frame — advances the timeline so React re-renders.
         // Do NOT increment animKey here: that remounts the motion.div every frame,
         // preventing scene 2 from ever appearing in the export.
@@ -540,6 +936,24 @@ export default function CinematicStudioPage() {
     setScenes(prev => prev.map(sc => sc.id === id ? { ...sc, ...patch } : sc));
   }, []);
 
+  const handleVideoTrimChange = useCallback((start: number, end: number) => {
+    const clampedStart = Math.max(0, start);
+    const clampedEnd = end;
+    const clipLength = clampedEnd - clampedStart;
+    setScenes(prev => prev.map(sc => {
+      if (sc.id !== activeSceneId) return sc;
+      const rate = sc.videoPlaybackRate ?? 1;
+      const newDuration = Math.max(0.5, Math.round((clipLength / rate) * 10) / 10);
+      return {
+        ...sc,
+        videoTrimStart: clampedStart,
+        videoTrimEnd: clampedEnd,
+        duration: newDuration,
+        scrollSpeed: newDuration,
+      };
+    }));
+  }, [activeSceneId]);
+
   const addScene = useCallback(() => {
     const id = `s${Date.now()}`;
     const colors = ['#f59e0b', '#ec4899', '#14b8a6', '#f97316'];
@@ -547,13 +961,12 @@ export default function CinematicStudioPage() {
       id,
       name: `Scene ${scenes.length + 1}`,
       duration: 3,
-      animation: 'floating-drift',
+      animationPreset: 'floating-drift',
       easing: 'spring',
       camera: { ...DEFAULT_CAMERA },
       color: colors[scenes.length % colors.length],
-      cameraSpeed: 1,
       scrollSpeed: 6,
-      mode: 'animation',
+      mode: 'animation' as const,
       hotspots: [],
     };
     // Seek to the new scene's start so activeSceneId derives correctly
@@ -574,7 +987,7 @@ export default function CinematicStudioPage() {
   };
 
   const handleDeviceScreenClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (activeScene.mode === 'flow') {
+    if (false /* flow mode removed */) {
       const rect = e.currentTarget.getBoundingClientRect();
       const x = ((e.clientX - rect.left) / rect.width) * 100;
       const y = ((e.clientY - rect.top) / rect.height) * 100;
@@ -582,17 +995,14 @@ export default function CinematicStudioPage() {
       const newHotspot: FlowHotspot = {
         id: `h${Date.now()}`,
         x, y,
-        width: 14, // roughly 44px on a mobile frame
-        height: 14,
         label: `Link`,
-        shape: 'circle',
-        targetSceneId: '',
-        animationPreset: 'pulse',
-        opacity: 100
+        action: 'none',
       };
       updateScene(activeSceneId, { 
-        hotspots: [...(activeScene.hotspots || []), newHotspot] 
+        hotspots: [...(activeScene.hotspots ?? []), newHotspot] 
       });
+    } else if (activeScene.mode === 'video') {
+      videoFileInputRef.current?.click();
     } else {
       fileInputRef.current?.click();
     }
@@ -735,14 +1145,14 @@ export default function CinematicStudioPage() {
                     >
                       <div className={s.textBlockPreview} style={{
                         fontWeight: block.fontWeight,
-                        fontSize: Math.max(10, block.fontSize * 0.18),
-                        letterSpacing: block.letterSpacing * 0.3,
+                        fontSize: Math.max(10, (block.fontSize ?? 20) * 0.18),
+                        letterSpacing: (block.letterSpacing ?? 0) * 0.3,
                         color: block.gradient ? 'transparent' : block.color,
                         backgroundImage: block.gradient ? 'linear-gradient(135deg, #a855f7, #6366f1)' : 'none',
                         WebkitBackgroundClip: block.gradient ? 'text' : 'border-box',
                         backgroundClip: block.gradient ? 'text' : 'border-box',
-                      }}>{block.text.split('\n')[0]}</div>
-                      <div className={s.textBlockLabel}>{block.label}</div>
+                      }}>{(block.text ?? '').split('\n')[0]}</div>
+                      <div className={s.textBlockLabel}>{block.type}</div>
                     </button>
                   ))}
                 </motion.div>
@@ -793,53 +1203,103 @@ export default function CinematicStudioPage() {
 
         {/* Center Canvas */}
         <div className={s.canvasArea}>
-          <div
-            ref={canvasViewportRef}
-            className={s.canvasViewport}
-            style={background.style}
-            onDragOver={e => e.preventDefault()}
-            onDrop={handleDrop}
-          >
-            <div className={s.canvasGrid} data-export-hide="true" />
+          {/* ── Konva Mode (activate with ?konva=1 in URL) ── */}
+          {useKonvaMode ? (
+            <div
+              className={s.canvasViewport}
+              style={{ position: 'relative', overflow: 'hidden' }}
+            >
+              {/* Mode badge */}
+              <div data-export-hide="true" style={{
+                position: 'absolute', top: 8, right: 8, zIndex: 100,
+                background: 'rgba(124,58,237,0.9)', color: 'white',
+                fontSize: 10, fontWeight: 700, padding: '2px 8px',
+                borderRadius: 4, letterSpacing: 0.5, pointerEvents: 'none',
+              }}>
+                ⚡ KONVA
+              </div>
 
-            {/* Virtual Camera Stage & Overlays */}
-            <CanvasArea
-              activeScene={activeScene}
-              scenes={scenes}
-              isPlaying={isPlaying}
-              currentTime={currentTime}
-              device={device}
-              frameColor={frameColor}
-              deviceScale={deviceScale}
-              background={background}
-              browserVariant={browserVariant}
-              layers={layers}
-              camera={camera}
-              fileInputRef={fileInputRef}
-              handleFileChange={handleFileChange}
-              handleDrop={handleDrop}
-              handleDeviceScreenClick={handleDeviceScreenClick}
-              handleSceneSeek={handleSceneSeek}
-              handlePlayPause={handlePlayPause}
-              addScene={addScene}
-              getVariants={getVariants}
-              animKey={animKey}
-              textLayers={textLayers}
-              activeTextLayerId={activeTextLayerId}
-              editingTextLayerId={editingTextLayerId}
-              setActiveTextLayerId={setActiveTextLayerId}
-              setEditingTextLayerId={setEditingTextLayerId}
-              updateTextLayer={updateTextLayer}
-              draggingLayerRef={draggingLayerRef}
-              dragStartRef={dragStartRef}
-              resizeLayerRef={resizeLayerRef}
-              resizeStartRef={resizeStartRef}
-              isExporting={isExporting}
-              handleTextLayerPointerDown={handleTextLayerPointerDown}
-              handleTextLayerPointerMove={handleTextLayerPointerMove}
-              handleTextLayerPointerUp={handleTextLayerPointerUp}
-            />
-          </div>
+              <KonvaStage
+                ref={konvaStageRef}
+                activeScene={activeScene}
+                scenes={scenes}
+                isPlaying={isPlaying}
+                currentTime={currentTime}
+                device={device}
+                frameColor={frameColor}
+                deviceScale={deviceScale}
+                background={background}
+                browserVariant={browserVariant}
+                layers={layers}
+                camera={camera}
+                fileInputRef={fileInputRef}
+                handleFileChange={handleFileChange}
+                handleDrop={handleDrop}
+                handleDeviceScreenClick={handleDeviceScreenClick}
+                handleSceneSeek={handleSceneSeek}
+                handlePlayPause={handlePlayPause}
+                addScene={addScene}
+                animKey={animKey}
+                textLayers={textLayers}
+                activeTextLayerId={activeTextLayerId}
+                editingTextLayerId={editingTextLayerId}
+                setActiveTextLayerId={setActiveTextLayerId}
+                setEditingTextLayerId={setEditingTextLayerId}
+                updateTextLayer={updateTextLayer}
+                isExporting={isExporting}
+                videoFileInputRef={videoFileInputRef}
+                handleVideoFileChange={handleVideoFileChange}
+                onRemoveMedia={handleRemoveMedia}
+                onAddMediaClick={() => setShowMediaPicker(true)}
+              />
+            </div>
+          ) : (
+            /* ── Legacy DOM Mode (default) ── */
+            <div
+              ref={canvasViewportRef}
+              className={s.canvasViewport}
+              style={background.style}
+              onDragOver={e => e.preventDefault()}
+              onDrop={handleDrop}
+            >
+              <div className={s.canvasGrid} data-export-hide="true" />
+
+              {/* Virtual Camera Stage & Overlays */}
+              <KonvaStage
+                ref={konvaStageRef}
+                activeScene={activeScene}
+                scenes={scenes}
+                isPlaying={isPlaying}
+                currentTime={currentTime}
+                device={device}
+                frameColor={frameColor}
+                deviceScale={deviceScale}
+                background={background}
+                browserVariant={browserVariant}
+                layers={layers}
+                camera={camera}
+                fileInputRef={fileInputRef}
+                handleFileChange={handleFileChange}
+                handleDrop={handleDrop}
+                handleDeviceScreenClick={handleDeviceScreenClick}
+                handleSceneSeek={handleSceneSeek}
+                handlePlayPause={handlePlayPause}
+                addScene={addScene}
+                animKey={animKey}
+                textLayers={textLayers}
+                activeTextLayerId={activeTextLayerId}
+                editingTextLayerId={editingTextLayerId}
+                setActiveTextLayerId={setActiveTextLayerId}
+                setEditingTextLayerId={setEditingTextLayerId}
+                updateTextLayer={updateTextLayer}
+                isExporting={isExporting}
+                videoFileInputRef={videoFileInputRef}
+                handleVideoFileChange={handleVideoFileChange}
+                onRemoveMedia={handleRemoveMedia}
+                onAddMediaClick={() => setShowMediaPicker(true)}
+              />
+            </div>
+          )}
 
           {/* Timeline */}
           <div 
@@ -888,11 +1348,25 @@ export default function CinematicStudioPage() {
               if (activeTextLayerId === id) setActiveTextLayerId(null);
             }}
             onModeChange={m => updateScene(activeSceneId, { mode: m })}
-            onAnimationChange={a => { updateScene(activeSceneId, { animation: a }); setAnimKey(k => k + 1); }}
+            onAnimationChange={a => { updateScene(activeSceneId, { animationPreset: a }); setAnimKey(k => k + 1); }}
             onEasingChange={e => updateScene(activeSceneId, { easing: e })}
             onDurationChange={d => updateScene(activeSceneId, { duration: d })}
-            onCameraSpeedChange={sp => updateScene(activeSceneId, { cameraSpeed: sp })}
+            
             onScrollSpeedChange={sp => updateScene(activeSceneId, { scrollSpeed: sp })}
+            
+            
+            onVideoPlaybackRateChange={r => {
+              setScenes(prev => prev.map(sc => {
+                if (sc.id !== activeSceneId) return sc;
+                const trimStart = sc.videoTrimStart ?? 0;
+                const trimEnd = sc.videoTrimEnd ?? sc.videoDuration ?? sc.duration;
+                const clipLength = (trimEnd ?? sc.duration) - trimStart;
+                const newDuration = Math.max(0.5, Math.round((clipLength / r) * 10) / 10);
+                return { ...sc, videoPlaybackRate: r, duration: newDuration, scrollSpeed: newDuration };
+              }));
+            }}
+            onVideoTrimChange={handleVideoTrimChange}
+            videoFileInputRef={videoFileInputRef}
             onHotspotUpdate={(hId, updates) => {
               const hotspots = activeScene.hotspots || [];
               updateScene(activeSceneId, {
@@ -900,7 +1374,7 @@ export default function CinematicStudioPage() {
               });
             }}
             onHotspotDelete={id => {
-              const hs = activeScene.hotspots.filter(h => h.id !== id);
+              const hs = (activeScene.hotspots ?? []).filter(h => h.id !== id);
               updateScene(activeSceneId, { hotspots: hs });
             }}
             onSceneRename={name => updateScene(activeSceneId, { name })}
@@ -934,7 +1408,48 @@ export default function CinematicStudioPage() {
           currentFrame={exportCurrentFrame}
           totalFrames={exportTotalFrames}
           errorMessage={exportError}
-          onDismissError={() => setExportError(null)}
+          onDismissError={() => setExportError(undefined)}
+        />
+      )}
+
+      {showMediaPicker && (
+        <MediaPickerModal
+          library={mediaLibrary}
+          onClose={() => setShowMediaPicker(false)}
+          onSelect={(asset) => {
+            const id = activeScene.id;
+            if (asset.type === 'video') {
+              const tmpVid = document.createElement('video');
+              tmpVid.preload = 'metadata';
+              tmpVid.onloadedmetadata = () => {
+                const dur = Math.round(tmpVid.duration * 10) / 10;
+                setScenes(prev => prev.map(sc => sc.id === id
+                  ? { ...sc, video: asset.url, image: undefined, mode: 'video', duration: dur, scrollSpeed: dur, videoDuration: dur, videoTrimStart: 0, videoTrimEnd: dur }
+                  : sc
+                ));
+              };
+              tmpVid.src = asset.url;
+            } else {
+              setScenes(prev => prev.map(sc => sc.id === id ? { ...sc, image: asset.url, video: undefined, mode: 'animation' as const } : sc));
+            }
+            setShowMediaPicker(false);
+          }}
+          onDelete={(assetId) => {
+            setMediaLibrary(prev => prev.filter(a => a.id !== assetId));
+            // Also remove from scenes if it's currently used
+            const assetToRemove = mediaLibrary.find(a => a.id === assetId);
+            if (assetToRemove) {
+              setScenes(prev => prev.map(sc => {
+                if (sc.image === assetToRemove.url) return { ...sc, image: undefined };
+                if (sc.video === assetToRemove.url) return { ...sc, video: undefined, mode: 'animation' as const };
+                return sc;
+              }));
+            }
+          }}
+          onUpload={() => {
+            // trigger normal file upload
+            fileInputRef.current?.click();
+          }}
         />
       )}
     </div>
