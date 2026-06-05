@@ -250,9 +250,9 @@ function MediaPickerModal({
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#a855f7" strokeWidth="2">
-                <rect x="3" y="3" width="18" height="18" rx="2"/>
-                <circle cx="8.5" cy="8.5" r="1.5"/>
-                <polyline points="21 15 16 10 5 21"/>
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <circle cx="8.5" cy="8.5" r="1.5" />
+                <polyline points="21 15 16 10 5 21" />
               </svg>
             </div>
             <div>
@@ -380,8 +380,8 @@ function MediaPickerModal({
                     onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '1'; }}
                   >
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <polyline points="3 6 5 6 21 6"/>
-                      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                      <polyline points="3 6 5 6 21 6" />
+                      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
                     </svg>
                   </button>
                 </div>
@@ -436,7 +436,7 @@ export default function CinematicStudioPage() {
         setSwitcherOpen(false);
       }
     }
-    
+
     const handleMouseMove = (e: MouseEvent) => {
       if (!isDraggingTimeline.current) return;
       // Calculate new timeline height based on mouse Y position
@@ -583,7 +583,7 @@ export default function CinematicStudioPage() {
   const [exportTotalFrames, setExportTotalFrames] = useState(0);
   const [exportError, setExportError] = useState<string | undefined>(undefined);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const chunksRef = useRef<BlobPart[]>([]); 
+  const chunksRef = useRef<BlobPart[]>([]);
 
   // Ref for the canvas viewport DOM element — used by the DOM-capture exporter
   const canvasViewportRef = useRef<HTMLDivElement | null>(null);
@@ -725,8 +725,10 @@ export default function CinematicStudioPage() {
           };
           setMediaLibrary(prev => [newAsset, ...prev]);
           setScenes(prev => prev.map(sc => sc.id === sceneId
-            ? { ...sc, video: dataUrl, mode: 'video', duration: dur, scrollSpeed: dur,
-                videoDuration: dur, videoTrimStart: 0, videoTrimEnd: dur }
+            ? {
+              ...sc, video: dataUrl, mode: 'video', duration: dur, scrollSpeed: dur,
+              videoDuration: dur, videoTrimStart: 0, videoTrimEnd: dur
+            }
             : sc
           ));
           addToast(`Video cargado ✓  (${dur}s)`, 'success');
@@ -757,8 +759,10 @@ export default function CinematicStudioPage() {
         };
         setMediaLibrary(prev => [newAsset, ...prev]);
         setScenes(prev => prev.map(sc => sc.id === sceneId
-          ? { ...sc, video: dataUrl, mode: 'video', duration: dur, scrollSpeed: dur,
-              videoDuration: dur, videoTrimStart: 0, videoTrimEnd: dur }
+          ? {
+            ...sc, video: dataUrl, mode: 'video', duration: dur, scrollSpeed: dur,
+            videoDuration: dur, videoTrimStart: 0, videoTrimEnd: dur
+          }
           : sc
         ));
         addToast(`Video cargado ✓  (${dur}s)`, 'success');
@@ -814,7 +818,7 @@ export default function CinematicStudioPage() {
         const ffmpeg = await getFFmpeg();
 
         let crf = '23';
-        if (quality === 'High')  crf = '18';
+        if (quality === 'High') crf = '18';
         if (quality === 'Ultra') crf = '14';
 
         for (let i = 0; i < totalFrames; i++) {
@@ -858,9 +862,9 @@ export default function CinematicStudioPage() {
 
         // Cleanup ffmpeg FS
         for (let i = 0; i < totalFrames; i++) {
-          try { await ffmpeg.deleteFile(`frame_${String(i).padStart(4, '0')}.png`); } catch {}
+          try { await ffmpeg.deleteFile(`frame_${String(i).padStart(4, '0')}.png`); } catch { }
         }
-        try { await ffmpeg.deleteFile('output.mp4'); } catch {}
+        try { await ffmpeg.deleteFile('output.mp4'); } catch { }
 
         const a = document.createElement('a');
         a.href = url;
@@ -991,15 +995,15 @@ export default function CinematicStudioPage() {
       const rect = e.currentTarget.getBoundingClientRect();
       const x = ((e.clientX - rect.left) / rect.width) * 100;
       const y = ((e.clientY - rect.top) / rect.height) * 100;
-      
+
       const newHotspot: FlowHotspot = {
         id: `h${Date.now()}`,
         x, y,
         label: `Link`,
         action: 'none',
       };
-      updateScene(activeSceneId, { 
-        hotspots: [...(activeScene.hotspots ?? []), newHotspot] 
+      updateScene(activeSceneId, {
+        hotspots: [...(activeScene.hotspots ?? []), newHotspot]
       });
     } else if (activeScene.mode === 'video') {
       videoFileInputRef.current?.click();
@@ -1015,13 +1019,13 @@ export default function CinematicStudioPage() {
       {/* Onboarding Modal */}
       <AnimatePresence>
         {showOnboarding && (
-          <motion.div 
+          <motion.div
             className={s.modalOverlay}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            <motion.div 
+            <motion.div
               className={s.modalContent}
               initial={{ opacity: 0, y: 20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -1066,7 +1070,7 @@ export default function CinematicStudioPage() {
                 <ChevronDown className={`${s.chevron} ${switcherOpen ? s.chevronOpen : ''}`} />
               </div>
             </button>
-            
+
             <AnimatePresence>
               {switcherOpen && (
                 <motion.div
@@ -1209,16 +1213,6 @@ export default function CinematicStudioPage() {
               className={s.canvasViewport}
               style={{ position: 'relative', overflow: 'hidden' }}
             >
-              {/* Mode badge */}
-              <div data-export-hide="true" style={{
-                position: 'absolute', top: 8, right: 8, zIndex: 100,
-                background: 'rgba(124,58,237,0.9)', color: 'white',
-                fontSize: 10, fontWeight: 700, padding: '2px 8px',
-                borderRadius: 4, letterSpacing: 0.5, pointerEvents: 'none',
-              }}>
-                ⚡ KONVA
-              </div>
-
               <KonvaStage
                 ref={konvaStageRef}
                 activeScene={activeScene}
@@ -1302,7 +1296,7 @@ export default function CinematicStudioPage() {
           )}
 
           {/* Timeline */}
-          <div 
+          <div
             className={s.timelineResizer}
             onMouseDown={() => {
               isDraggingTimeline.current = true;
@@ -1351,10 +1345,10 @@ export default function CinematicStudioPage() {
             onAnimationChange={a => { updateScene(activeSceneId, { animationPreset: a }); setAnimKey(k => k + 1); }}
             onEasingChange={e => updateScene(activeSceneId, { easing: e })}
             onDurationChange={d => updateScene(activeSceneId, { duration: d })}
-            
+
             onScrollSpeedChange={sp => updateScene(activeSceneId, { scrollSpeed: sp })}
-            
-            
+
+
             onVideoPlaybackRateChange={r => {
               setScenes(prev => prev.map(sc => {
                 if (sc.id !== activeSceneId) return sc;

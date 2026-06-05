@@ -310,29 +310,99 @@ function ImageDeviceFrame({ device, frameColor, deviceScale }: ImageDeviceFrameP
 }
 
 
-function KonvaStaticImage({ src, x, y, width, height, clipFunc, mode, scrollProgress }: any) {
-  const [img] = useImage(src);
-  if (!img) return null;
+function KonvaStaticImage({ src, x, y, width, height, mode, scrollProgress }: any) {
+  const [img] = useImage(src, 'anonymous');
+  const [bounds, setBounds] = useState<{ x: number, y: number, width: number, height: number } | null>(null);
 
-  let crop = undefined;
+  useEffect(() => {
+    if (!img) {
+      setBounds(null);
+      return;
+    }
+    // Automatically find bounding box of non-transparent pixels
+    const canvas = document.createElement('canvas');
+    canvas.width = img.width;
+    canvas.height = img.height;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) {
+      setBounds({ x: 0, y: 0, width: img.width, height: img.height });
+      return;
+    }
+    ctx.drawImage(img, 0, 0);
+    try {
+      const imageData = ctx.getImageData(0, 0, img.width, img.height);
+      const data = imageData.data;
+      let top = null, bottom = null, left = null, right = null;
+      for (let py = 0; py < img.height; py++) {
+        for (let px = 0; px < img.width; px++) {
+          const alpha = data[(py * img.width + px) * 4 + 3];
+          if (alpha > 10) {
+            if (top === null) top = py;
+            bottom = py;
+            if (left === null || px < left) left = px;
+            if (right === null || px > right) right = px;
+          }
+        }
+      }
+      if (top !== null && bottom !== null && left !== null && right !== null) {
+        setBounds({ x: left, y: top, width: right - left + 1, height: bottom - top + 1 });
+      } else {
+        setBounds({ x: 0, y: 0, width: img.width, height: img.height });
+      }
+    } catch (e) {
+      setBounds({ x: 0, y: 0, width: img.width, height: img.height });
+    }
+  }, [img]);
+
+  if (!img || !bounds) return null;
+
+  const screenAspect = width / height;
+  const contentAspect = bounds.width / bounds.height;
+
+  let cropWidth = bounds.width;
+  let cropHeight = bounds.height;
+  let cropX = 0;
+  let cropY = 0;
+
   if (mode === 'scroll') {
-    const screenAspect = width / height;
-    const drawHeight = img.width / screenAspect;
-    const maxScroll = Math.max(0, img.height - drawHeight);
-    crop = {
-      x: 0,
-      y: maxScroll * scrollProgress,
-      width: img.width,
-      height: drawHeight
-    };
+    // Scroll mode: fit width, scroll vertically
+    cropWidth = bounds.width;
+    cropHeight = bounds.width / screenAspect;
+
+    if (cropHeight > bounds.height) {
+      // Image is too short to scroll, fallback to cover
+      cropHeight = bounds.height;
+      cropWidth = bounds.height * screenAspect;
+      cropX = (bounds.width - cropWidth) / 2;
+    } else {
+      const maxScroll = bounds.height - cropHeight;
+      cropY = maxScroll * scrollProgress;
+    }
+  } else {
+    // Animation mode: object-fit: cover
+    if (contentAspect > screenAspect) {
+      // Image is wider than screen -> crop sides
+      cropHeight = bounds.height;
+      cropWidth = bounds.height * screenAspect;
+      cropX = (bounds.width - cropWidth) / 2;
+    } else {
+      // Image is taller than screen -> crop top/bottom
+      cropWidth = bounds.width;
+      cropHeight = bounds.width / screenAspect;
+      cropY = (bounds.height - cropHeight) / 2;
+    }
   }
 
   return (
     <KonvaImage 
       image={img} 
       x={x} y={y} width={width} height={height} 
-      crop={crop}
-      clipFunc={clipFunc} 
+      crop={{ 
+        x: bounds.x + cropX, 
+        y: bounds.y + cropY, 
+        width: cropWidth, 
+        height: cropHeight 
+      }}
       listening={false}
     />
   );
@@ -594,8 +664,11 @@ const KonvaStage = forwardRef<KonvaStageHandle, KonvaStageProps>(function KonvaS
   const deviceGroupRef = useRef<Konva.Group>(null);
 
   // ── Animation preset on device group ─────────────────────────────────────
-  // Disable animation in video mode — the video fills the screen and shouldn't bob
-  const effectivePreset: AnimationPreset = activeScene.mode === 'video' ? 'none' : activeScene.animationPreset;
+  // Disable continuous animation in video/scroll modes, but allow entrance animations.
+  const ENTRANCE_ANIMATIONS = ['none', 'hero-reveal', 'cinematic-push', 'precision-zoom', 'focus-pull', 'camera-slide'];
+  const effectivePreset: AnimationPreset = (activeScene.mode !== 'animation' && !ENTRANCE_ANIMATIONS.includes(activeScene.animationPreset))
+    ? 'none'
+    : activeScene.animationPreset;
 
   useKonvaAnimation({
     groupRef: deviceGroupRef,
@@ -626,9 +699,9 @@ const KonvaStage = forwardRef<KonvaStageHandle, KonvaStageProps>(function KonvaS
   }
 
   // ── Screen clip func ──────────────────────────────────────────────────────
-  const screenClipFunc = useCallback((ctx: CanvasRenderingContext2D) => {
-    if ((ctx as any).roundRect) {
-      (ctx as any).roundRect(screen.x, screen.y, screen.w, screen.h, screen.radius);
+  const screenClipFunc = useCallback((ctx: any) => {
+    if (ctx.roundRect) {
+      ctx.roundRect(screen.x, screen.y, screen.w, screen.h, screen.radius);
     } else {
       ctx.rect(screen.x, screen.y, screen.w, screen.h);
     }
@@ -706,28 +779,29 @@ const KonvaStage = forwardRef<KonvaStageHandle, KonvaStageProps>(function KonvaS
                 {/* Animation Group: handles intro animations. Origin = stage center. */}
                 <Group ref={deviceGroupRef}>
                   
-                  {/* Static Image (animation/scroll) inside device screen */}
-                  {activeScene.mode !== 'video' && activeScene.image && (
-                    <KonvaStaticImage 
-                      src={activeScene.image}
-                      x={screen.x} y={screen.y} width={screen.w} height={screen.h}
-                      clipFunc={screenClipFunc}
-                      mode={activeScene.mode}
-                      scrollProgress={Math.max(0, Math.min(1, currentTime / Math.max(0.1, activeScene.duration)))}
-                    />
-                  )}
+                  {/* Group to clip the screen contents (images and videos) */}
+                  <Group clipFunc={screenClipFunc}>
+                    {/* Static Image (animation/scroll) inside device screen */}
+                    {activeScene.mode !== 'video' && activeScene.image && (
+                      <KonvaStaticImage 
+                        src={activeScene.image}
+                        x={screen.x} y={screen.y} width={screen.w} height={screen.h}
+                        mode={activeScene.mode}
+                        scrollProgress={scrollProgress}
+                      />
+                    )}
 
-                  {/* Video inside device screen (behind frame) */}
-                  {activeScene.mode === 'video' && videoEl && (
-                    <KonvaImage
-                      image={videoEl}
-                      x={screen.x}
-                      y={screen.y}
-                      width={screen.w}
-                      height={screen.h}
-                      clipFunc={screenClipFunc}
-                    />
-                  )}
+                    {/* Video inside device screen (behind frame) */}
+                    {activeScene.mode === 'video' && videoEl && (
+                      <KonvaImage
+                        image={videoEl}
+                        x={screen.x}
+                        y={screen.y}
+                        width={screen.w}
+                        height={screen.h}
+                      />
+                    )}
+                  </Group>
 
                   {/* iPhone frame image — always on top of video/image */}
                   {(device !== 'browser' && device !== 'macbook-pro' && device !== 'none') && (

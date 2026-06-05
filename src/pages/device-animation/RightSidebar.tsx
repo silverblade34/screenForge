@@ -9,8 +9,6 @@ import {
 import {
   AnimationPreset, EasingType, SceneScene, SceneMode, TextLayer, FlowHotspot,
   FONT_PRESETS,
-  SCENE_PRESETS,
-  EASINGS,
   ANIMATION_PRESETS,
 } from './types';
 import s from './page.module.css';
@@ -396,42 +394,42 @@ export default function RightSidebar({
                 ))}
               </div>
             </div>
-
-            <div className={s.inspectorSection}>
-              <SectionHeader icon={<Sliders size={10} />} label="Animation" />
-              <div className={s.presetGrid}>
-                {ANIMATION_PRESETS.map(a => (
-                  <button
-                    key={a.value}
-                    className={`${s.presetBtn} ${scene.animationPreset === a.value ? s.presetBtnActive : ''}`}
-                    onClick={() => onAnimationChange(a.value)}
-                  >
-                    <span className={s.presetIcon}>{getAnimationIcon(a.icon)}</span>
-                    <div className={s.presetMeta}>
-                      <span className={s.presetName}>{a.label}</span>
-                      <span className={s.presetDesc}>{a.desc}</span>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className={s.inspectorSection}>
-              <SectionHeader icon={<Activity size={10} />} label="Easing" />
-              <div className={s.easingGrid}>
-                {EASINGS.map(e => (
-                  <button
-                    key={e.value}
-                    className={`${s.easingBtn} ${scene.easing === e.value ? s.easingBtnActive : ''}`}
-                    onClick={() => onEasingChange(e.value)}
-                  >
-                    {e.label}
-                  </button>
-                ))}
-              </div>
-            </div>
           </>
         )}
+
+        <div className={s.inspectorSection}>
+          <SectionHeader icon={<Sliders size={10} />} label="Entrance Animation" />
+          <div className={s.presetGrid}>
+            {ANIMATION_PRESETS.filter(a => mode === 'animation' || ['none', 'hero-reveal', 'cinematic-push', 'precision-zoom', 'focus-pull', 'camera-slide'].includes(a.value)).map(a => (
+              <button
+                key={a.value}
+                className={`${s.presetBtn} ${scene.animationPreset === a.value ? s.presetBtnActive : ''}`}
+                onClick={() => onAnimationChange(a.value)}
+              >
+                <span className={s.presetIcon}>{getAnimationIcon(a.icon)}</span>
+                <div className={s.presetMeta}>
+                  <span className={s.presetName}>{a.label}</span>
+                  <span className={s.presetDesc}>{a.desc}</span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className={s.inspectorSection}>
+          <SectionHeader icon={<Activity size={10} />} label="Easing" />
+          <div className={s.easingGrid}>
+            {EASINGS.map(e => (
+              <button
+                key={e.value}
+                className={`${s.easingBtn} ${scene.easing === e.value ? s.easingBtnActive : ''}`}
+                onClick={() => onEasingChange(e.value)}
+              >
+                {e.label}
+              </button>
+            ))}
+          </div>
+        </div>
 
         {mode === 'video' && (
           <div className={s.inspectorSection}>
@@ -816,57 +814,61 @@ export default function RightSidebar({
         )}
 
         {/* Common Properties: Duration & Camera Speed */}
-        <div className={s.inspectorSection}>
-          <SectionHeader icon={<Clock size={10} />} label="Scene Duration" />
-          <div className={s.inputRow}>
-            <label className={s.inputLabel}>Duration (seconds)</label>
-            <input
-              type="number"
-              className={s.numberInput}
-              min={0.5} max={30} step={0.5}
-              value={scene.duration}
-              onChange={e => onDurationChange(parseFloat(e.target.value))}
-            />
-          </div>
-          <div className={s.twoCol} style={{ marginTop: 8 }}>
-            {[1, 2, 3, 4, 5, 6].map(d => (
-              <button
-                key={d}
-                className={`${s.easingBtn} ${scene.duration === d ? s.easingBtnActive : ''}`}
-                onClick={() => onDurationChange(d)}
-              >
-                {d}s
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className={s.inspectorSection}>
-          <SectionHeader icon={<Gauge size={10} />} label="Camera Speed" />
-          <div className={s.sliderRow}>
-            <div className={s.sliderMeta}>
-              <span className={s.sliderName}>Transition Speed</span>
-              <span className={s.sliderVal}>{speed.toFixed(1)}×</span>
+        {mode !== 'scroll' && (
+          <>
+            <div className={s.inspectorSection}>
+              <SectionHeader icon={<Clock size={10} />} label="Scene Duration" />
+              <div className={s.inputRow}>
+                <label className={s.inputLabel}>Duration (seconds)</label>
+                <input
+                  type="number"
+                  className={s.numberInput}
+                  min={0.5} max={30} step={0.5}
+                  value={scene.duration}
+                  onChange={e => onDurationChange(parseFloat(e.target.value))}
+                />
+              </div>
+              <div className={s.twoCol} style={{ marginTop: 8 }}>
+                {[1, 2, 3, 4, 5, 6].map(d => (
+                  <button
+                    key={d}
+                    className={`${s.easingBtn} ${scene.duration === d ? s.easingBtnActive : ''}`}
+                    onClick={() => onDurationChange(d)}
+                  >
+                    {d}s
+                  </button>
+                ))}
+              </div>
             </div>
-            <input
-              type="range" className={s.slider}
-              min={0.1} max={3} step={0.1}
-              value={speed}
-              onChange={() => {}}
-            />
-          </div>
-          <div className={s.twoCol} style={{ marginTop: 8 }}>
-            {[{ label: 'Slow', v: 0.3 }, { label: 'Normal', v: 1 }, { label: 'Fast', v: 2 }, { label: 'Instant', v: 3 }].map(o => (
-              <button
-                key={o.label}
-                className={`${s.easingBtn} ${Math.abs(speed - o.v) < 0.05 ? s.easingBtnActive : ''}`}
-                onClick={() => {}}
-              >
-                {o.label}
-              </button>
-            ))}
-          </div>
-        </div>
+
+            <div className={s.inspectorSection}>
+              <SectionHeader icon={<Gauge size={10} />} label="Camera Speed" />
+              <div className={s.sliderRow}>
+                <div className={s.sliderMeta}>
+                  <span className={s.sliderName}>Transition Speed</span>
+                  <span className={s.sliderVal}>{speed.toFixed(1)}×</span>
+                </div>
+                <input
+                  type="range" className={s.slider}
+                  min={0.1} max={3} step={0.1}
+                  value={speed}
+                  onChange={() => {}}
+                />
+              </div>
+              <div className={s.twoCol} style={{ marginTop: 8 }}>
+                {[{ label: 'Slow', v: 0.3 }, { label: 'Normal', v: 1 }, { label: 'Fast', v: 2 }, { label: 'Instant', v: 3 }].map(o => (
+                  <button
+                    key={o.label}
+                    className={`${s.easingBtn} ${Math.abs(speed - o.v) < 0.05 ? s.easingBtnActive : ''}`}
+                    onClick={() => {}}
+                  >
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </>
   );
