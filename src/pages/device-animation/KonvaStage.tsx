@@ -82,8 +82,12 @@ interface KonvaStageProps {
   handleVideoFileChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   /** Called when user removes the current media (image/video) */
   onRemoveMedia?: () => void;
-  /** Called when user clicks "Add media" placeholder */
+  /** Called when user clicks "Add media" placeholder (legacy, optional) */
   onAddMediaClick?: () => void;
+  /** Media library for inline picker */
+  mediaLibrary?: import('./types').MediaAsset[];
+  onSelectMedia?: (asset: import('./types').MediaAsset) => void;
+  onDeleteMedia?: (id: string) => void;
 }
 
 // ── Frame color palette ────────────────────────────────────────────────────────
@@ -580,6 +584,9 @@ const KonvaStage = forwardRef<KonvaStageHandle, KonvaStageProps>(function KonvaS
   handleVideoFileChange,
   onRemoveMedia,
   onAddMediaClick,
+  mediaLibrary = [],
+  onSelectMedia,
+  onDeleteMedia,
 }, ref) {
   // ── Stage size ──────────────────────────────────────────────────────────────
   const containerRef = useRef<HTMLDivElement>(null);
@@ -710,8 +717,13 @@ const KonvaStage = forwardRef<KonvaStageHandle, KonvaStageProps>(function KonvaS
     }
   }, [screen.x, screen.y, screen.w, screen.h, screen.radius]);
 
-  // ── Hover state for media overlay ─────────────────────────────────────────
+  // ── Hover & Picker state ─────────────────────────────────────────
   const [mediaHovered, setMediaHovered] = useState(false);
+  const [emptyHovered, setEmptyHovered] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  // Fixed-viewport anchor for the picker panel (computed from containerRef bounding rect)
+  const [pickerAnchor, setPickerAnchor] = useState<{ x: number; top: number } | null>(null);
+  const pickerRef = useRef<HTMLDivElement | null>(null);
 
   // ── Compute device screen position for DOM overlays ──────────────────────
   // screen.x/y is in group coords (center = 0,0)
@@ -726,6 +738,31 @@ const KonvaStage = forwardRef<KonvaStageHandle, KonvaStageProps>(function KonvaS
   const overlayTop    = (realScreenY / stageSize.height) * 100;
   const overlayWidth  = (screen.w * effectiveCamera.zoom) / stageSize.width * 100;
   const overlayHeight = (screen.h * effectiveCamera.zoom) / stageSize.height * 100;
+
+  // Compute fixed-position anchor whenever picker opens
+  useEffect(() => {
+    if (!pickerOpen) return;
+    const el = containerRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    // Anchor to the top-center of the canvas container, ignoring device position
+    setPickerAnchor({ 
+      x: rect.left + rect.width / 2, 
+      top: rect.top + 40 
+    });
+  }, [pickerOpen]);
+
+  // Close picker when clicking outside
+  useEffect(() => {
+    if (!pickerOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
+        setPickerOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [pickerOpen]);
 
   const hasMedia = !!(activeScene.mode === 'video' ? activeScene.video : activeScene.image);
 
@@ -757,7 +794,6 @@ const KonvaStage = forwardRef<KonvaStageHandle, KonvaStageProps>(function KonvaS
           style={{ width: '100%', height: '100%', position: 'relative' }}
           onDragOver={e => e.preventDefault()}
           onDrop={handleDrop}
-          onClick={handleDeviceScreenClick as any}
         >
           <Stage
             ref={stageRef}
@@ -781,9 +817,17 @@ const KonvaStage = forwardRef<KonvaStageHandle, KonvaStageProps>(function KonvaS
               >
                 {/* Animation Group: handles intro animations. Origin = stage center. */}
                 <Group ref={deviceGroupRef}>
-                  
-                  {/* Group to clip the screen contents (images and videos) */}
+
+                  {/* ── Screen background fill (always dark, clipped to phone screen) ──
+                      Must be INSIDE this animated group so it moves with the frame. */}
                   <Group clipFunc={screenClipFunc}>
+                    <Rect
+                      x={screen.x} y={screen.y}
+                      width={screen.w} height={screen.h}
+                      fill="#0a0a0a"
+                      listening={false}
+                    />
+
                     {/* Static Image (animation/scroll) inside device screen */}
                     {activeScene.mode !== 'video' && activeScene.image && (
                       <KonvaStaticImage 
@@ -803,6 +847,128 @@ const KonvaStage = forwardRef<KonvaStageHandle, KonvaStageProps>(function KonvaS
                         width={screen.w}
                         height={screen.h}
                       />
+                    )}
+
+                    {/* Konva Empty State — animates with the device group. */}
+                    {!hasMedia && !isExporting && (
+                      <Group
+                        x={screen.x + screen.w / 2}
+                        y={screen.y + screen.h / 2 - 18}
+                        listening={false}
+                      >
+                        {emptyHovered ? (
+                          // ── Hover state: "Select Media" label ──
+                          <>
+                            {/* Icon bg */}
+                            <Rect
+                              x={-22} y={-22} width={44} height={44}
+                              cornerRadius={12}
+                              fill="rgba(255,255,255,0.13)"
+                              stroke="rgba(255,255,255,0.2)"
+                              strokeWidth={1}
+                              listening={false}
+                            />
+                            {/* Image icon — simplified mountain/photo */}
+                            <Rect x={-13} y={-14} width={28} height={22} cornerRadius={4} fill="rgba(255,255,255,0.7)" listening={false} />
+                            <Shape
+                              sceneFunc={(ctx, shape) => {
+                                ctx.beginPath();
+                                ctx.moveTo(-6, 4);
+                                ctx.lineTo(0, -4);
+                                ctx.lineTo(6, 2);
+                                ctx.lineTo(8, -1);
+                                ctx.lineTo(13, 6);
+                                ctx.lineTo(-11, 6);
+                                ctx.closePath();
+                                ctx.fillStrokeShape(shape);
+                              }}
+                              fill="rgba(255,255,255,0.35)"
+                              listening={false}
+                            />
+                            {/* Plus badge */}
+                            <Rect x={4} y={-24} width={16} height={16} cornerRadius={8} fill="white" listening={false} />
+                            <KonvaText text="+" x={4} y={-24} width={16} height={16} align="center" verticalAlign="middle" fontSize={13} fontStyle="bold" fill="#111" listening={false} />
+                            {/* Select Media text */}
+                            <KonvaText
+                              text="Select Media"
+                              x={-90} y={32}
+                              width={180}
+                              align="center"
+                              fontSize={Math.max(11, screen.w * 0.042)}
+                              fontStyle="600"
+                              fill="white"
+                              listening={false}
+                            />
+                            <KonvaText
+                              text="Open Media Picker"
+                              x={-90} y={32 + Math.max(11, screen.w * 0.042) + 6}
+                              width={180}
+                              align="center"
+                              fontSize={Math.max(9, screen.w * 0.032)}
+                              fill="rgba(255,255,255,0.4)"
+                              listening={false}
+                            />
+                          </>
+                        ) : (
+                          // ── Idle state: "Drop or Paste" with photo+video icons ──
+                          <>
+                            {/* Photo icon (rounded rect) */}
+                            <Rect x={-34} y={-22} width={36} height={28} cornerRadius={6} fill="rgba(255,255,255,0.18)" listening={false} />
+                            <Shape
+                              sceneFunc={(ctx, shape) => {
+                                ctx.beginPath();
+                                ctx.moveTo(-26, -2);
+                                ctx.lineTo(-20, -10);
+                                ctx.lineTo(-14, -4);
+                                ctx.lineTo(-12, -7);
+                                ctx.lineTo(-6, 0);
+                                ctx.lineTo(-28, 0);
+                                ctx.closePath();
+                                ctx.fillStrokeShape(shape);
+                              }}
+                              fill="rgba(255,255,255,0.3)"
+                              listening={false}
+                            />
+                            {/* Video camera icon (rect + triangle) */}
+                            <Rect x={5} y={-20} width={28} height={22} cornerRadius={5} fill="rgba(255,255,255,0.18)" listening={false} />
+                            <Shape
+                              sceneFunc={(ctx, shape) => {
+                                ctx.beginPath();
+                                ctx.moveTo(33, -15);
+                                ctx.lineTo(40, -9);
+                                ctx.lineTo(33, -3);
+                                ctx.closePath();
+                                ctx.fillStrokeShape(shape);
+                              }}
+                              fill="rgba(255,255,255,0.18)"
+                              listening={false}
+                            />
+                            {/* Plus badge */}
+                            <Rect x={-6} y={-8} width={18} height={18} cornerRadius={9} fill="white" listening={false} />
+                            <KonvaText text="+" x={-6} y={-8} width={18} height={18} align="center" verticalAlign="middle" fontSize={13} fontStyle="bold" fill="#111" listening={false} />
+                            {/* Labels */}
+                            <KonvaText
+                              text="Drop or Paste"
+                              x={-90} y={22}
+                              width={180}
+                              align="center"
+                              fontSize={Math.max(11, screen.w * 0.042)}
+                              fontStyle="600"
+                              fill="rgba(255,255,255,0.82)"
+                              listening={false}
+                            />
+                            <KonvaText
+                              text="Images & Videos"
+                              x={-90} y={22 + Math.max(11, screen.w * 0.042) + 6}
+                              width={180}
+                              align="center"
+                              fontSize={Math.max(9, screen.w * 0.032)}
+                              fill="rgba(255,255,255,0.38)"
+                              listening={false}
+                            />
+                          </>
+                        )}
+                      </Group>
                     )}
                   </Group>
 
@@ -909,54 +1075,173 @@ const KonvaStage = forwardRef<KonvaStageHandle, KonvaStageProps>(function KonvaS
           )}
 
 
-          {/* ── Empty state: Shots.so style - only shown when no media */}
+          {/* ── Empty state: smooth hover overlay + click-based inline picker ── */}
           {!hasMedia && !isExporting && (
-            <div
-              style={{
-                position: 'absolute',
-                left: `${overlayLeft}%`,
-                top: `${overlayTop}%`,
-                width: `${overlayWidth}%`,
-                height: `${overlayHeight}%`,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 6,
-                background: 'rgba(0,0,0,0.55)',
-                color: 'white',
-                cursor: 'pointer',
-                borderRadius: `${screen.radius}px`,
-                transition: 'background 0.2s',
-                zIndex: 5
-              }}
-              onClick={() => onAddMediaClick ? onAddMediaClick() : fileInputRef?.current?.click()}
-              onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.4)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.55)'; }}
-            >
-              <div style={{
-                width: 48, height: 48,
-                borderRadius: '50%',
-                background: 'rgba(255,255,255,0.1)',
-                border: '1px solid rgba(255,255,255,0.2)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                position: 'relative', marginBottom: 4
-              }}>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                  <circle cx="12" cy="13" r="4"/>
-                </svg>
-                <div style={{
-                  position: 'absolute', bottom: -3, right: -3,
-                  width: 16, height: 16, borderRadius: '50%',
-                  background: 'white', color: '#000',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 12, fontWeight: 800, lineHeight: 1
-                }}>+</div>
-              </div>
-              <span style={{ fontSize: 13, fontWeight: 600, letterSpacing: '-0.01em' }}>Drop or Paste</span>
-              <span style={{ fontSize: 11, opacity: 0.5 }}>Images &amp; Videos</span>
-            </div>
+            <>
+              {/* Inline Media Picker panel — fixed to viewport so it ignores CSS 3D camera transforms */}
+              {pickerOpen && pickerAnchor && (
+                <div
+                  ref={pickerRef}
+                  style={{
+                    position: 'fixed',
+                    left: pickerAnchor.x,
+                    top: pickerAnchor.top,
+                    transform: 'translate(-50%, calc(-100% - 18px))',
+                    zIndex: 99999,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: 8,
+                    animation: 'fadeInUp 0.22s cubic-bezier(0.34,1.56,0.64,1)',
+                    pointerEvents: 'auto',
+                  }}
+                >
+                  <span style={{
+                    fontSize: 13, fontWeight: 500,
+                    color: 'rgba(255,255,255,0.75)',
+                    letterSpacing: '-0.01em',
+                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+                  }}>Media Picker</span>
+
+                  {/* Horizontal scrollable media strip */}
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    alignItems: 'stretch',
+                    gap: 8,
+                    background: 'rgba(18,18,22,0.92)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: 16,
+                    padding: '10px 12px',
+                    backdropFilter: 'blur(24px)',
+                    WebkitBackdropFilter: 'blur(24px)',
+                    boxShadow: '0 20px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04)',
+                    maxWidth: 360,
+                    overflowX: 'auto',
+                  }}>
+                    {/* Existing media thumbnails */}
+                    {mediaLibrary.map(asset => (
+                      <div
+                        key={asset.id}
+                        title={asset.name}
+                        style={{
+                          width: 60,
+                          aspectRatio: '9/16',
+                          borderRadius: 10,
+                          overflow: 'hidden',
+                          cursor: 'pointer',
+                          border: '1.5px solid rgba(255,255,255,0.08)',
+                          flexShrink: 0,
+                          background: '#111',
+                          transition: 'border-color 0.15s, transform 0.15s',
+                          position: 'relative',
+                        }}
+                        onClick={() => { onSelectMedia?.(asset); setPickerOpen(false); }}
+                        onMouseEnter={e => {
+                          (e.currentTarget as HTMLElement).style.borderColor = 'rgba(168,85,247,0.6)';
+                          (e.currentTarget as HTMLElement).style.transform = 'scale(1.04)';
+                        }}
+                        onMouseLeave={e => {
+                          (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)';
+                          (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
+                        }}
+                      >
+                        {asset.type === 'image'
+                          ? <img src={asset.url} alt={asset.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                          : <video src={asset.url} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} muted />
+                        }
+                        {/* Delete btn */}
+                        <button
+                          style={{
+                            position: 'absolute', top: 4, right: 4,
+                            width: 18, height: 18, borderRadius: 5,
+                            background: 'rgba(239,68,68,0.85)',
+                            border: 'none', color: 'white', cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: 11, fontWeight: 800, lineHeight: 1,
+                            opacity: 0, transition: 'opacity 0.15s',
+                          }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '1'; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '0'; }}
+                          onClick={e => { e.stopPropagation(); onDeleteMedia?.(asset.id); }}
+                        >×</button>
+                      </div>
+                    ))}
+
+                    {/* Add new media button */}
+                    <button
+                      style={{
+                        width: 60,
+                        aspectRatio: '9/16',
+                        borderRadius: 10,
+                        border: '1.5px dashed rgba(255,255,255,0.2)',
+                        background: 'rgba(255,255,255,0.04)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 4,
+                        color: 'rgba(255,255,255,0.5)',
+                        flexShrink: 0,
+                        transition: 'border-color 0.15s, background 0.15s, color 0.15s',
+                        fontSize: 9,
+                        fontWeight: 600,
+                        letterSpacing: '0.02em',
+                        textTransform: 'uppercase',
+                        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+                      }}
+                      onMouseEnter={e => {
+                        const el = e.currentTarget as HTMLElement;
+                        el.style.borderColor = 'rgba(168,85,247,0.5)';
+                        el.style.background = 'rgba(168,85,247,0.08)';
+                        el.style.color = 'rgba(168,85,247,0.9)';
+                      }}
+                      onMouseLeave={e => {
+                        const el = e.currentTarget as HTMLElement;
+                        el.style.borderColor = 'rgba(255,255,255,0.2)';
+                        el.style.background = 'rgba(255,255,255,0.04)';
+                        el.style.color = 'rgba(255,255,255,0.5)';
+                      }}
+                      onClick={() => {
+                        activeScene.mode === 'video'
+                          ? videoFileInputRef?.current?.click()
+                          : fileInputRef?.current?.click();
+                      }}
+                    >
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"/>
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                      </svg>
+                      Add
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Transparent click area over the phone screen — with smooth CSS hover transition */}
+              <div
+                style={{
+                  position: 'absolute',
+                  left: `${overlayLeft}%`,
+                  top: `${overlayTop}%`,
+                  width: `${overlayWidth}%`,
+                  height: `${overlayHeight}%`,
+                  cursor: 'pointer',
+                  borderRadius: `${screen.radius}px`,
+                  zIndex: 15,
+                  // Smooth background highlight on hover
+                  background: emptyHovered && !pickerOpen ? 'rgba(255,255,255,0.045)' : 'transparent',
+                  transition: 'background 0.45s ease',
+                }}
+                onMouseEnter={() => setEmptyHovered(true)}
+                onMouseLeave={() => setEmptyHovered(false)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setPickerOpen(prev => !prev);
+                }}
+              />
+            </>
           )}
 
 

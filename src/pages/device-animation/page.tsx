@@ -791,6 +791,36 @@ export default function CinematicStudioPage() {
     }
   };
 
+  const handleSelectMedia = useCallback((asset: MediaAsset) => {
+    const id = activeScene.id;
+    if (asset.type === 'video') {
+      const tmpVid = document.createElement('video');
+      tmpVid.preload = 'metadata';
+      tmpVid.onloadedmetadata = () => {
+        const dur = Math.round(tmpVid.duration * 10) / 10;
+        setScenes(prev => prev.map(sc => sc.id === id
+          ? { ...sc, video: asset.url, image: undefined, mode: 'video', duration: dur, scrollSpeed: dur, videoDuration: dur, videoTrimStart: 0, videoTrimEnd: dur }
+          : sc
+        ));
+      };
+      tmpVid.src = asset.url;
+    } else {
+      setScenes(prev => prev.map(sc => sc.id === id ? { ...sc, image: asset.url, video: undefined, mode: 'animation' as const } : sc));
+    }
+  }, [activeScene.id]);
+
+  const handleDeleteMedia = useCallback((assetId: string) => {
+    setMediaLibrary(prev => prev.filter(a => a.id !== assetId));
+    const assetToRemove = mediaLibrary.find(a => a.id === assetId);
+    if (assetToRemove) {
+      setScenes(prev => prev.map(sc => {
+        if (sc.image === assetToRemove.url) return { ...sc, image: undefined };
+        if (sc.video === assetToRemove.url) return { ...sc, video: undefined, mode: 'animation' as const };
+        return sc;
+      }));
+    }
+  }, [mediaLibrary]);
+
   const handleExportVideo = () => {
     setShowExportDialog(true);
   };
@@ -1244,7 +1274,9 @@ export default function CinematicStudioPage() {
                 videoFileInputRef={videoFileInputRef}
                 handleVideoFileChange={handleVideoFileChange}
                 onRemoveMedia={handleRemoveMedia}
-                onAddMediaClick={() => setShowMediaPicker(true)}
+                mediaLibrary={mediaLibrary}
+                onSelectMedia={handleSelectMedia}
+                onDeleteMedia={handleDeleteMedia}
               />
             </div>
           ) : (
@@ -1290,7 +1322,9 @@ export default function CinematicStudioPage() {
                 videoFileInputRef={videoFileInputRef}
                 handleVideoFileChange={handleVideoFileChange}
                 onRemoveMedia={handleRemoveMedia}
-                onAddMediaClick={() => setShowMediaPicker(true)}
+                mediaLibrary={mediaLibrary}
+                onSelectMedia={handleSelectMedia}
+                onDeleteMedia={handleDeleteMedia}
               />
             </div>
           )}

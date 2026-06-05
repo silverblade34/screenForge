@@ -136,9 +136,9 @@ export const ANIMATION_PRESETS: { value: AnimationPreset; label: string; icon: s
 ];
 
 export const DEFAULT_SCENES: SceneScene[] = [
-  { id: "s1", name: "Intro", duration: 3.5, mode: "animation", animationPreset: "hero-reveal", easing: "ease-out", camera: { ...DEFAULT_CAMERA }, color: "#7c3aed" },
-  { id: "s2", name: "Feature", duration: 4, mode: "animation", animationPreset: "floating-drift", easing: "ease-in-out", camera: { ...DEFAULT_CAMERA, zoom: 1.08, panY: -20 }, color: "#0ea5e9" },
-  { id: "s3", name: "Reveal", duration: 3, mode: "animation", animationPreset: "precision-zoom", easing: "ease-out", camera: { ...DEFAULT_CAMERA, zoom: 1.15 }, color: "#10b981" },
+  { id: "s1", name: "Intro", duration: 3.5, mode: "animation", animationPreset: "floating-drift", easing: "ease-in-out", camera: { ...DEFAULT_CAMERA }, color: "#7c3aed" },
+  { id: "s2", name: "Feature", duration: 4, mode: "animation", animationPreset: "precision-zoom", easing: "ease-in-out", camera: { ...DEFAULT_CAMERA, zoom: 1.08, panY: -20 }, color: "#0ea5e9" },
+  { id: "s3", name: "Reveal", duration: 3, mode: "animation", animationPreset: "hero-reveal", easing: "ease-out", camera: { ...DEFAULT_CAMERA, zoom: 1.15 }, color: "#10b981" },
 ];
 
 export const DEFAULT_LAYERS: Layer[] = [
