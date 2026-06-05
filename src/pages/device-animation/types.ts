@@ -91,18 +91,18 @@ export interface BackgroundOption {
 }
 
 export const BACKGROUNDS: BackgroundOption[] = [
-  { id: 'bg-solid-1', label: 'Midnight',  type: 'solid', style: { background: '#0f172a' } },
-  { id: 'bg-solid-2', label: 'Crimson',   type: 'solid', style: { background: '#9f1239' } },
-  { id: 'bg-solid-3', label: 'Forest',    type: 'solid', style: { background: '#064e3b' } },
-  { id: 'sunset',    label: 'Sunset',    type: 'solid', style: { background: 'linear-gradient(135deg, #ff7e5f, #feb47b)' } },
-  { id: 'midnight',  label: 'Midnight',  type: 'solid', style: { background: 'linear-gradient(135deg, #141e30, #243b55)' } },
-  { id: 'cosmic',    label: 'Cosmic',    type: 'solid', style: { background: 'radial-gradient(ellipse at center, #1a0533 0%, #050505 70%)' } },
-  { id: 'aurora',    label: 'Aurora',    type: 'solid', style: { background: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)' } },
-  { id: 'ocean',     label: 'Ocean',     type: 'solid', style: { background: 'linear-gradient(135deg, #0f2027, #203a43, #2c5364)' } },
-  { id: 'ember',     label: 'Ember',     type: 'solid', style: { background: 'linear-gradient(135deg, #1a0000, #3d0000, #1a0000)' } },
-  { id: 'mint',      label: 'Mint',      type: 'solid', style: { background: 'linear-gradient(135deg, #004d40, #00695c, #004d40)' } },
-  { id: 'slate',     label: 'Slate',     type: 'solid', style: { background: 'linear-gradient(135deg, #0f172a, #1e293b)' } },
-  { id: 'purple',    label: 'Purple',    type: 'solid', style: { background: 'radial-gradient(ellipse at top, #2e1065 0%, #09090b 60%)' } },
+  { id: 'transparent', label: 'Transparent', type: 'solid', style: { background: 'transparent' }, konvaFill: 'transparent' },
+  { id: 'studio-dark', label: 'Studio Dark', type: 'solid', style: { background: 'radial-gradient(ellipse at top, #334155 0%, #0f172a 80%)' } },
+  { id: 'studio-light', label: 'Studio Light', type: 'solid', style: { background: 'radial-gradient(ellipse at top, #f8fafc 0%, #e2e8f0 80%)' } },
+  { id: 'neon-purple', label: 'Neon Purple', type: 'solid', style: { background: 'radial-gradient(ellipse at top, #9333ea 0%, #1e1b4b 80%)' } },
+  { id: 'ocean-glow', label: 'Ocean Glow', type: 'solid', style: { background: 'radial-gradient(ellipse at top, #0ea5e9 0%, #082f49 80%)' } },
+  { id: 'sunset-glow', label: 'Sunset Glow', type: 'solid', style: { background: 'radial-gradient(ellipse at top, #f43f5e 0%, #4c0519 80%)' } },
+  { id: 'emerald-spot', label: 'Emerald Spot', type: 'solid', style: { background: 'radial-gradient(ellipse at top, #10b981 0%, #064e3b 80%)' } },
+  { id: 'midnight',  label: 'Midnight',  type: 'solid', style: { background: 'linear-gradient(180deg, #1e293b 0%, #020617 100%)' } },
+  { id: 'warm-spot', label: 'Warm Spot', type: 'solid', style: { background: 'radial-gradient(ellipse at top, #fbbf24 0%, #451a03 80%)' } },
+  { id: 'cosmic',    label: 'Cosmic',    type: 'solid', style: { background: 'radial-gradient(ellipse at top center, #3b0764 0%, #000000 80%)' } },
+  { id: 'aurora',    label: 'Aurora',    type: 'solid', style: { background: 'radial-gradient(ellipse at top, #34d399 0%, #1e1b4b 100%)' } },
+  { id: 'slate',     label: 'Slate',     type: 'solid', style: { background: 'radial-gradient(ellipse at top, #64748b 0%, #0f172a 80%)' } },
 ];
 
 export const DEFAULT_CAMERA: CameraState = {

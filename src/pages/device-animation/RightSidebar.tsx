@@ -814,7 +814,7 @@ export default function RightSidebar({
         )}
 
         {/* Common Properties: Duration & Camera Speed */}
-        {mode !== 'scroll' && (
+        {mode === 'animation' && (
           <>
             <div className={s.inspectorSection}>
               <SectionHeader icon={<Clock size={10} />} label="Scene Duration" />

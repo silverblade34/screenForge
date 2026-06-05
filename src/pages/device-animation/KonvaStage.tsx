@@ -119,8 +119,11 @@ interface ParsedGradient {
 function parseCSSGradient(bg: string, w: number, h: number): ParsedGradient {
   bg = (bg || '').trim();
 
-  if (!bg || bg === 'none' || bg === 'transparent') {
+  if (!bg || bg === 'none') {
     return { type: 'solid', color: '#000000' };
+  }
+  if (bg === 'transparent') {
+    return { type: 'solid', color: 'transparent' };
   }
 
   if (bg.startsWith('#') || bg.startsWith('rgb') || bg.startsWith('hsl')) {
